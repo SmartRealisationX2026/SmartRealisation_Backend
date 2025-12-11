@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant A as Administrateur
+    participant F as Frontend
+    participant B as Backend
+    participant DB as PostgreSQL
+
+    A->>F: Accède dashboard
+    F->>B: GET /api/admin/dashboard (JWT)
+    
+    par Chargement parallèle des KPIs
+        B->>DB: COUNT recherches (24h/7j/30j)
+        DB-->>B: Métriques recherches
+        
+        B->>DB: SELECT top 10 médicaments
+        DB-->>B: Médicaments populaires
+        
+        B->>DB: COUNT pharmacies actives
+        DB-->>B: Statistiques pharmacies
+        
+        B->>DB: Calcul taux succès recherches
+        DB-->>B: Pourcentage résultats
+    end
+    
+    B-->>F: Données consolidées dashboard
+    F->>F: Rend graphiques + tableaux
+    F-->>A: Dashboard interactif

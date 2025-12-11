@@ -1,0 +1,38 @@
+graph TD
+    subgraph "Cas d'utilisation Patient"
+        UC1[Rechercher médicament]
+        UC2[Voir pharmacies sur carte]
+        UC3[Filtrer résultats]
+        UC4[Consulter infos pharmacie]
+        UC5[Calculer itinéraire]
+        UC6[Consulter historique]
+        UC7[Changer langue]
+        
+        UC1 --> UC1a[Avec auto-complétion]
+        UC1 --> UC1b[Avec suggestions similaires]
+        UC1 --> UC1c[Insensible aux fautes]
+        
+        UC2 --> UC2a[Géolocalisation]
+        UC2 --> UC2b[Clustering marqueurs]
+        UC2 --> UC2c[Zoom/pan]
+        
+        UC3 --> UC3a[Par distance]
+        UC3 --> UC3b[Par prix]
+        UC3 --> UC3c[Par disponibilité]
+        UC3 --> UC3d[Par ville/quartier]
+        
+        UC4 --> UC4a[Coordonnées]
+        UC4 --> UC4b[Horaires]
+        UC4 --> UC4c[Contacts]
+        UC4 --> UC4d[Stocks détaillés]
+    end
+    
+    A[Patient] --> UC1
+    A --> UC2
+    A --> UC3
+    A --> UC4
+    A --> UC5
+    A --> UC6
+    A --> UC7
+    
+    style A fill:#e1f5fe

@@ -1,0 +1,32 @@
+graph TD
+    subgraph "Cas d'utilisation Pharmacien"
+        UC1[Gérer compte]
+        UC2[Gérer stocks]
+        UC3[Consulter statistiques]
+        UC4[Gérer pharmacie info]
+        
+        UC1 --> UC1a[Créer compte]
+        UC1 --> UC1b[Se connecter]
+        UC1 --> UC1c[Modifier profil]
+        
+        UC2 --> UC2a[Ajouter médicament]
+        UC2 --> UC2b[Modifier quantité]
+        UC2 --> UC2c[Supprimer médicament]
+        UC2 --> UC2d[Marquer rupture]
+        UC2 --> UC2e[Importer CSV]
+        
+        UC3 --> UC3a[Recherches par médicament]
+        UC3 --> UC3b[Statistiques visites]
+        UC3 --> UC3c[Tendance demande]
+        
+        UC4 --> UC4a[Modifier adresse]
+        UC4 --> UC4b[Modifier horaires]
+        UC4 --> UC4c[Modifier contacts]
+    end
+    
+    A[Pharmacien] --> UC1
+    A --> UC2
+    A --> UC3
+    A --> UC4
+    
+    style A fill:#f3e5f5

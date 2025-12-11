@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant P as Patient
+    participant F as Frontend
+    participant B as Backend
+    participant DB as PostgreSQL
+
+    P->>F: Ouvre panneau filtres
+    F-->>P: Affiche options (distance, prix, ville...)
+    
+    P->>F: Applique filtres
+    F->>B: GET /api/pharmacies?medication=X&maxPrice=5000&city=Yaoundé
+    B->>DB: Requête avec clauses WHERE
+    DB-->>B: Résultats filtrés
+    B->>B: Applique logique métier supplémentaire
+    B-->>F: Données filtrées
+    
+    F->>F: Met à jour carte + liste
+    F->>F: Ajuste clustering marqueurs
+    F-->>P: Affichage résultats filtrés

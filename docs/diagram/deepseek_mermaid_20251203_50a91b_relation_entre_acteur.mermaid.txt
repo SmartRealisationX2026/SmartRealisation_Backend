@@ -1,0 +1,26 @@
+graph LR
+    P[Patient]
+    PH[Pharmacien]
+    A[Administrateur]
+    S[Système MediLink]
+    
+    P -- Recherche --> S
+    P -- Consulte --> S
+    P -- Filtre --> S
+    
+    PH -- Gère stocks --> S
+    PH -- Met à jour --> S
+    PH -- Consulte stats --> S
+    
+    A -- Valide --> PH
+    A -- Supervise --> S
+    A -- Analyse --> S
+    
+    S -- Notifie --> P
+    S -- Synchronise --> PH
+    S -- Rapporte --> A
+    
+    style P fill:#e1f5fe
+    style PH fill:#f3e5f5
+    style A fill:#e8f5e8
+    style S fill:#f5f5f5

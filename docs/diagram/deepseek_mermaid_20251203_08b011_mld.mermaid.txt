@@ -1,0 +1,91 @@
+erDiagram
+    users {
+        uuid id PK
+        varchar email
+        varchar password_hash
+        varchar role "patient|pharmacist|admin"
+        varchar name
+        varchar phone
+        jsonb location "géolocalisation"
+        varchar language "fr|en"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    pharmacies {
+        uuid id PK
+        varchar name
+        varchar address
+        varchar city
+        varchar neighborhood
+        decimal latitude
+        decimal longitude
+        varchar phone
+        boolean is_24_7
+        uuid owner_id FK "pharmacist"
+        boolean is_approved
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    medications {
+        uuid id PK
+        varchar name
+        varchar dci
+        varchar form
+        varchar dosage
+        varchar category
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    stocks {
+        uuid id PK
+        uuid pharmacy_id FK
+        uuid medication_id FK
+        integer quantity
+        decimal price_fcfa
+        timestamp last_updated
+        boolean is_out_of_stock
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    searches {
+        uuid id PK
+        uuid user_id FK "nullable (anonymous)"
+        uuid medication_id FK
+        decimal latitude
+        decimal longitude
+        integer results_count
+        timestamp created_at
+    }
+
+    alerts {
+        uuid id PK
+        uuid user_id FK "nullable"
+        uuid medication_id FK
+        uuid pharmacy_id FK
+        varchar contact_info "email or phone"
+        varchar status "pending|sent"
+        timestamp created_at
+        timestamp sent_at
+    }
+
+    audit_logs {
+        uuid id PK
+        uuid user_id FK
+        varchar action
+        jsonb details
+        timestamp created_at
+    }
+
+    users ||--o{ searches : performs
+    users ||--o{ alerts : subscribes
+    pharmacies ||--o{ stocks : contains
+    medications ||--o{ stocks : has
+    medications ||--o{ searches : searched_for
+    pharmacies ||--o{ alerts : notifies_about
+    
+    users ||--o| pharmacies : owns
+    users ||--o{ audit_logs : creates

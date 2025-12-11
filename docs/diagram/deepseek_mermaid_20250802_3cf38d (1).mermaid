@@ -1,0 +1,8 @@
+graph LR
+    A[Data Ingestion] -->|REST API| B[Database]
+    C[AI Forecasting] -->|REST API| A
+    D[Optimization] -->|REST API| C
+    E[Frontend] -->|REST API| A & D
+    style A stroke-dasharray: 5 5
+    style C stroke-dasharray: 5 5
+    style D stroke-dasharray: 5 5

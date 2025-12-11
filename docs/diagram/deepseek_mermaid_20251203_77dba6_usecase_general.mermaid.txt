@@ -1,0 +1,32 @@
+graph TD
+    subgraph "Système MediLink"
+        UC1[Rechercher un médicament]
+        UC2[Consulter les pharmacies sur carte]
+        UC3[Filtrer les résultats]
+        UC4[Gérer les stocks - Pharmacien]
+        UC5[Consulter dashboard admin]
+        UC6[Recherche vocale]
+        UC7[Alertes rupture de stock]
+        UC8[Analytics avancées]
+    end
+    
+    subgraph "Acteurs Principaux"
+        A1[Patient]
+        A2[Pharmacien]
+        A3[Administrateur]
+    end
+    
+    A1 --> UC1
+    A1 --> UC2
+    A1 --> UC3
+    A1 --> UC6
+    A1 --> UC7
+    
+    A2 --> UC4
+    
+    A3 --> UC5
+    A3 --> UC8
+    
+    style A1 fill:#e1f5fe
+    style A2 fill:#f3e5f5
+    style A3 fill:#e8f5e8

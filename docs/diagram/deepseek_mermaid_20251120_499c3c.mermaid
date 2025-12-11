@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant P as Patient
+    participant F as Frontend
+    participant B as Backend
+    participant DB as PostgreSQL
+    participant OSM as OpenStreetMap
+
+    P->>F: Autorise géolocalisation
+    F->>F: Récupère position GPS
+    F->>B: GET /api/pharmacies/nearby?lat=X&lng=Y&radius=10
+    B->>DB: Requête pharmacies dans rayon
+    DB-->>B: Liste pharmacies
+    B->>B: Calcul distances + tri
+    B-->>F: Données géolocalisées
+    
+    F->>OSM: Charge carte avec coordonnées
+    OSM-->>F: Tiles carte
+    F->>F: Place marqueurs pharmacies
+    F->>F: Affiche marqueur position utilisateur
+    F-->>P: Carte interactive avec résultats

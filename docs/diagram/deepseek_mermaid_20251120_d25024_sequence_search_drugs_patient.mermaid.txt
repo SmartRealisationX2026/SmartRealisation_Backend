@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant P as Patient
+    participant F as Frontend (React Native)
+    participant B as Backend (NestJS)
+    participant DB as PostgreSQL
+    participant R as Redis (Cache)
+
+    P->>F: Saisit 2+ caractères
+    F->>B: GET /api/medications/autocomplete?q=para
+    B->>R: Vérifie cache auto-complétion
+    alt Données en cache
+        R-->>B: Retourne suggestions
+    else Données non en cache
+        B->>DB: Recherche fuzzy (pg_trgm)
+        DB-->>B: Retourne médicaments
+        B->>R: Met en cache (5 min)
+    end
+    B-->>F: Liste suggestions
+    F-->>P: Affiche auto-complétion
+    
+    P->>F: Sélectionne médicament
+    F->>B: GET /api/pharmacies?medication=paracetamol
+    B->>DB: Jointure Stocks + Pharmacies
+    DB-->>B: Liste pharmacies avec stocks
+    B->>B: Calcule distances (Haversine)
+    B-->>F: Résultats triés par distance
+    F->>F: Affiche carte + liste
+    F-->>P: Interface résultats

@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant PH as Pharmacien
+    participant F as Frontend
+    participant B as Backend
+    participant DB as PostgreSQL
+    participant WS as WebSocket (Temps réel)
+
+    PH->>F: Se connecte (JWT)
+    F->>B: POST /auth/login
+    B-->>F: Token d'authentification
+    
+    PH->>F: Modifie quantité stock
+    F->>B: PUT /api/stocks/{id}
+    B->>DB: UPDATE stock SET quantity = X
+    DB-->>B: Confirmation mise à jour
+    
+    par Mise à jour temps réel
+        B->>WS: Broadcast stock_update
+        WS->>F: Notification push
+        F->>F: Met à jour interface patient
+    end
+    
+    B-->>F: Confirmation succès
+    F-->>PH: Feedback visuel

@@ -1,0 +1,112 @@
+classDiagram
+    class Utilisateur {
+        +uuid id
+        +string email
+        +string rôle (patient/pharmacien/admin)
+        +string nom
+        +string téléphone
+        +Position localisation
+        +string langue
+    }
+
+    class Pharmacie {
+        +uuid id
+        +string nom
+        +Adresse adresse
+        +Position géolocalisation
+        +string téléphone
+        +bool 24/7
+        +Pharmacien propriétaire
+        +bool approuvée
+    }
+
+    class Médicament {
+        +uuid id
+        +string nom
+        +string DCI
+        +string forme
+        +string dosage
+        +string catégorie
+    }
+
+    class Stock {
+        +uuid id
+        +Pharmacie pharmacie
+        +Médicament médicament
+        +int quantité
+        +decimal prix_FCFA
+        +bool rupture_stock
+        +datetime dernière_maj
+    }
+
+    class Recherche {
+        +uuid id
+        +Utilisateur utilisateur (optionnel)
+        +Médicament médicament
+        +Position localisation_recherche
+        +int nombre_résultats
+        +datetime date
+    }
+
+    class Alerte {
+        +uuid id
+        +Utilisateur abonné (optionnel)
+        +Médicament médicament
+        +Pharmacie pharmacie
+        +string contact (email/téléphone)
+        +string statut
+    }
+
+    class DashboardAdmin {
+        +int recherches_total
+        +int pharmacies_actives
+        +float taux_succès
+        +List~Médicament~ top_médicaments
+        +HeatMap cartographie_recherches
+    }
+
+    %% Relations
+    Utilisateur "1" --> "0..*" Recherche : effectue
+    Utilisateur "1" --> "0..*" Alerte : s'abonne à
+    Pharmacien "1" --> "1..*" Pharmacie : gère
+    Pharmacie "1" --> "0..*" Stock : contient
+    Médicament "1" --> "0..*" Stock : disponible dans
+    Recherche "1" --> "1" Médicament : recherche
+    Alerte "1" --> "1" Médicament : concerne
+    Alerte "1" --> "1" Pharmacie : concerne
+    
+    %% Classes de valeur
+    class Adresse {
+        +string rue
+        +string ville
+        +string quartier
+    }
+    
+    class Position {
+        +decimal latitude
+        +decimal longitude
+    }
+    
+    class HeatMap {
+        +Map~Position,int~ intensité_recherches
+        +Map~Quartier,List~Médicament~~ top_par_zone
+    }
+
+    %% Héritage rôles
+    Utilisateur <|-- Patient
+    Utilisateur <|-- Pharmacien
+    Utilisateur <|-- Administrateur
+    
+    class Patient {
+        +HistoriqueRecherche[] historique
+    }
+    
+    class Pharmacien {
+        +Pharmacie[] pharmacies_gérées
+        +DashboardPharmacien dashboard
+    }
+    
+    class Administrateur {
+        +DashboardAdmin dashboard
+        +List~LogAudit~ logs
+    }

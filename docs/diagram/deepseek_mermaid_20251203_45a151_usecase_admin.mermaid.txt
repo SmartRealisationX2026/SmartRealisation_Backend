@@ -1,0 +1,32 @@
+graph TD
+    subgraph "Cas d'utilisation Administrateur"
+        UC1[Valider pharmacies]
+        UC2[Superviser plateforme]
+        UC3[Gérer données]
+        UC4[Analytics avancées]
+        
+        UC1 --> UC1a[Approuver inscription]
+        UC1 --> UC1b[Suspendre pharmacie]
+        UC1 --> UC1c[Supprimer pharmacie]
+        
+        UC2 --> UC2a[Voir KPIs]
+        UC2 --> UC2b[Voir logs système]
+        UC2 --> UC2c[Gérer utilisateurs]
+        UC2 --> UC2d[Modérer signalements]
+        
+        UC3 --> UC3a[Exporter données]
+        UC3 --> UC3b[Importer médicaments]
+        UC3 --> UC3c[Nettoyer données]
+        UC3 --> UC3d[Sauvegarder BDD]
+        
+        UC4 --> UC4a[Heatmap recherches]
+        UC4 --> UC4b[Analyses prédictives]
+        UC4 --> UC4c[Rapports détaillés]
+    end
+    
+    A[Administrateur] --> UC1
+    A --> UC2
+    A --> UC3
+    A --> UC4
+    
+    style A fill:#e8f5e8
