@@ -8,6 +8,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  //url      = env("DATABASE_URL")
 }
 
 // Enums
@@ -29,13 +30,13 @@ enum Language {
 
 // Models
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
   email     String   @unique
-  password  String   // Will be hashed
+  password  String // Will be hashed
   role      UserRole
   name      String
   phone     String?
-  location  Json?    // {latitude: number, longitude: number}
+  location  Json? // {latitude: number, longitude: number}
   language  Language @default(FR)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -53,7 +54,7 @@ model User {
 }
 
 model Pharmacy {
-  id           String   @id @default(uuid())
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
   name         String
   address      String
   city         String
@@ -62,15 +63,15 @@ model Pharmacy {
   longitude    Decimal  @db.Decimal(11, 8)
   phone        String?
   is24_7       Boolean  @default(false) @map("is_24_7")
-  ownerId      String   @unique @map("owner_id") // 1:1 relationship enforced
+  ownerId      String   @unique @map("owner_id") @db.Uuid() // 1:1 relationship enforced
   isApproved   Boolean  @default(false) @map("is_approved")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   // Relations
-  owner   User     @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
-  stocks  Stock[]
-  alerts  Alert[]
+  owner  User    @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  stocks Stock[]
+  alerts Alert[]
 
   // Index pour colonnes fréquemment recherchées
   @@index([latitude, longitude])
@@ -79,12 +80,12 @@ model Pharmacy {
 }
 
 model Medication {
-  id        String   @id @default(uuid())
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
   name      String
-  dci       String?  // Dénomination Commune Internationale
-  form      String?  // Comprimé, sirop, injection, etc.
-  dosage    String?  // 500mg, 10ml, etc.
-  category  String?  // Antibiotique, Antalgique, etc.
+  dci       String? // Dénomination Commune Internationale
+  form      String? // Comprimé, sirop, injection, etc.
+  dosage    String? // 500mg, 10ml, etc.
+  category  String? // Antibiotique, Antalgique, etc.
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -100,15 +101,15 @@ model Medication {
 }
 
 model Stock {
-  id            String   @id @default(uuid())
-  pharmacyId    String   @map("pharmacy_id")
-  medicationId  String   @map("medication_id")
-  quantity      Int      @default(0)
-  priceFcfa     Decimal  @default(0) @db.Decimal(10, 2) @map("price_fcfa")
-  lastUpdated   DateTime @default(now()) @map("last_updated")
-  isOutOfStock  Boolean  @default(false) @map("is_out_of_stock")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  pharmacyId   String   @map("pharmacy_id") @db.Uuid()
+  medicationId String   @map("medication_id") @db.Uuid()
+  quantity     Int      @default(0)
+  priceFcfa    Decimal  @default(0) @map("price_fcfa") @db.Decimal(10, 2)
+  lastUpdated  DateTime @default(now()) @map("last_updated")
+  isOutOfStock Boolean  @default(false) @map("is_out_of_stock")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
   pharmacy   Pharmacy   @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
@@ -116,7 +117,6 @@ model Stock {
 
   // Constraints
   @@unique([pharmacyId, medicationId])
-
   // Index pour colonnes fréquemment recherchées
   @@index([quantity])
   @@index([priceFcfa])
@@ -124,17 +124,17 @@ model Stock {
 }
 
 model Search {
-  id            String   @id @default(uuid())
-  userId        String?  @map("user_id") // Nullable for anonymous searches
-  medicationId  String   @map("medication_id")
-  latitude      Decimal  @db.Decimal(10, 8) // RESTORED: for spatial analytics (heatmaps)
-  longitude     Decimal  @db.Decimal(11, 8) // RESTORED: for spatial analytics (heatmaps)
-  resultsCount  Int      @default(0) @map("results_count")
-  createdAt     DateTime @default(now())
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  userId       String?  @map("user_id") @db.Uuid() // Nullable for anonymous searches
+  medicationId String   @map("medication_id") @db.Uuid()
+  latitude     Decimal  @db.Decimal(10, 8) // RESTORED: for spatial analytics (heatmaps)
+  longitude    Decimal  @db.Decimal(11, 8) // RESTORED: for spatial analytics (heatmaps)
+  resultsCount Int      @default(0) @map("results_count")
+  createdAt    DateTime @default(now())
 
   // Relations
-  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  medication Medication  @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  user       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  medication Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
 
   // Index pour analytics géographiques
   @@index([latitude, longitude])
@@ -142,10 +142,10 @@ model Search {
 }
 
 model Alert {
-  id           String      @id @default(uuid())
-  userId       String?     @map("user_id") // Nullable for anonymous alerts
-  medicationId String      @map("medication_id")
-  pharmacyId   String?     @map("pharmacy_id") // Nullable for global alerts
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  userId       String?     @map("user_id") @db.Uuid() // Nullable for anonymous alerts
+  medicationId String      @map("medication_id") @db.Uuid()
+  pharmacyId   String?     @map("pharmacy_id") @db.Uuid() // Nullable for global alerts
   contactInfo  String      @map("contact_info") // email or phone
   status       AlertStatus @default(PENDING)
   createdAt    DateTime    @default(now())
@@ -160,10 +160,10 @@ model Alert {
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  action    String   // CREATE, UPDATE, DELETE, LOGIN, etc.
-  details   Json?    // Additional context
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  userId    String   @map("user_id") @db.Uuid()
+  action    String // CREATE, UPDATE, DELETE, LOGIN, etc.
+  details   Json? // Additional context
   createdAt DateTime @default(now())
 
   // Relations
