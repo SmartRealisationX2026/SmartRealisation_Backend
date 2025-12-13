@@ -1,35 +1,106 @@
+# 🏥 SmartRealisation Backend - MediLink Platform
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+<p align="center">
+  A comprehensive medication linkage platform built with NestJS, connecting patients with pharmacies in Cameroon through intelligent search and real-time availability tracking.
 </p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+<div align="center">
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+[![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)](https://www.prisma.io/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-## Project setup
+</div>
+
+## 📋 Description
+
+**SmartRealisation** is a cutting-edge medication linkage platform designed to revolutionize healthcare access in Cameroon. Our backend API provides:
+
+- **Real-time pharmacy search** with geolocation-based availability tracking
+- **Intelligent medication matching** across pharmacy networks
+- **Stock alert system** for critical medications
+- **Comprehensive analytics** for healthcare administrators
+- **Multi-language support** (French/English) for accessibility
+- **Secure user management** for patients, pharmacists, and administrators
+
+### Key Features
+
+🔍 **Smart Search**: Location-based medication search with real-time stock verification
+📊 **Analytics Dashboard**: Comprehensive insights for healthcare administrators
+🔔 **Stock Alerts**: Automated notifications for medication availability
+🏪 **Pharmacy Network**: Centralized management of pharmacy partnerships
+💊 **Medication Database**: Structured catalog with therapeutic categories
+🌍 **Geolocation Services**: GPS-based proximity calculations
+🔒 **Security First**: JWT authentication with role-based access control
++++++++ REPLACE</parameter>
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js (v18+)
+- PostgreSQL (v12+)
+- npm or yarn
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/SmartRealisationX2026/SmartRealisation_Backend.git
+   cd SmartRealisation_Backend
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your database credentials
+   ```
+
+4. **Initialize database**
+   ```bash
+   # Create database and user
+   bash prisma/scripts/init-db.sh
+
+   # Generate Prisma client
+   npm run db:generate
+
+   # Run migrations
+   npm run db:migrate
+
+   # Seed with test data
+   npm run db:seed
+   ```
+
+5. **Start the development server**
+   ```bash
+   npm run start:dev
+   ```
+
+The API will be available at `http://localhost:3000`
+
+### Database Scripts
 
 ```bash
-$ npm install
+# View database in browser
+npm run db:studio
+
+# Reset database (⚠️ DELETES ALL DATA)
+npm run db:reset
+
+# Validate database structure
+psql -d medilink_db -f prisma/scripts/validate.sql
 ```
++++++++ REPLACE</parameter>
 
 ## Compile and run the project
 
