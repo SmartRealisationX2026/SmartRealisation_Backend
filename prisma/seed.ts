@@ -1,563 +1,458 @@
 import 'dotenv/config'
 import * as bcrypt from 'bcrypt'
-import { Client } from 'pg'
+import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 import { faker } from '@faker-js/faker'
-import { cleanDatabase } from './clean-db'
 
-// Check if DATABASE_URL is defined
-if (!process.env.DATABASE_URL) {
-  console.error('❌ Error: DATABASE_URL is not defined in environment variables')
-  console.error('Please create a .env file with: DATABASE_URL="postgresql://username:password@localhost:5432/dbname"')
-  process.exit(1)
-}
+const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+const adapter = new PrismaPg(pool)
+const prisma = new PrismaClient({ adapter })
 
-// Use direct PostgreSQL client to seed data
-const client = new Client({
-  connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 30000, // 30 seconds
-  keepAlive: true,
-  keepAliveInitialDelayMillis: 10000, // 10 seconds
-})
-
-// Helper function to ensure connection is active
-async function ensureConnection() {
-  try {
-    // Simple ping query to check if connection is alive
-    await client.query('SELECT 1')
-  } catch (error: any) {
-    if (error.code === '57P01' || error.message?.includes('Connection terminated') || error.message?.includes('ended')) {
-      console.log('⚠️  Connection lost, reconnecting...')
-      try {
-        await client.end()
-      } catch {
-        // Ignore errors when ending
-      }
-      await client.connect()
-    } else {
-      throw error
-    }
-  }
-}
-
-// Helper functions to generate fake data
-function generateCameroonPhone(): string {
-  return `+237${faker.string.numeric(9)}`
-}
-
-function generateCameroonLocation(): { latitude: number; longitude: number } {
-  // Cameroon coordinates ranges
-  // Latitude: 1.65 to 13.08
-  // Longitude: 8.49 to 16.19
-  return {
-    latitude: parseFloat(faker.location.latitude({ min: 1.65, max: 13.08 }).toFixed(8)),
-    longitude: parseFloat(faker.location.longitude({ min: 8.49, max: 16.19 }).toFixed(8))
-  }
-}
-
-function generateCameroonCity(): string {
-  const cities = ['Douala', 'Yaoundé', 'Bafoussam', 'Bamenda', 'Garoua', 'Maroua', 'Buea', 'Limbe', 'Kribi', 'Ebolowa']
-  return faker.helpers.arrayElement(cities)
-}
-
-function generateMedicationForm(): string {
-  const forms = ['Comprimé', 'Gélule', 'Sirop', 'Injection', 'Pommade', 'Gouttes', 'Suppositoire', 'Spray']
-  return faker.helpers.arrayElement(forms)
-}
-
-function generateMedicationCategory(): string {
-  const categories = [
-    'Antalgique', 'Antibiotique', 'Anti-inflammatoire', 'Vitamine', 'Antiulcéreux',
-    'Antihistaminique', 'Antitussif', 'Antidiabétique', 'Cardiovasculaire', 'Dermatologique'
-  ]
-  return faker.helpers.arrayElement(categories)
-}
-
-function generateDosage(): string {
-  const dosages = ['250mg', '500mg', '1000mg', '20mg', '40mg', '10ml', '20ml', '5ml', '1g', '2g']
-  return faker.helpers.arrayElement(dosages)
-}
+// Set seed for reproducible results
+faker.seed(12345)
 
 async function main() {
-  console.log('🌱 Seeding database with original data + Faker.js...')
+  console.log('🌱 Seeding database with new MLD v2 schema + Faker.js v8...')
   console.log('')
-
-  await client.connect()
-
-  // Clean database before seeding
-  await cleanDatabase(client)
-
-  // Hash password for users
-  const hashedPassword = await bcrypt.hash('password123', 10)
 
   try {
     // ============================================
-    // ORIGINAL DATA (keeping your existing data)
+    // REFERENCE DATA (cities, districts, categories, forms)
     // ============================================
-    console.log('📝 Creating original data...')
+    console.log('📝 Creating reference data...')
 
-    // Create admin user
-    const adminResult = await client.query(`
-      INSERT INTO users (id, email, password, role, name, phone, language, "createdAt", "updatedAt")
-      VALUES (gen_random_uuid(), 'admin@medilink.cm', $1, 'ADMIN', 'Admin MediLink', '+237690000000', 'FR', NOW(), NOW())
-      RETURNING id
-    `, [hashedPassword])
-    const adminId = adminResult.rows[0].id
-    console.log('✅ Admin user created')
-
-    // Create pharmacist users
-    const pharmacist1Result = await client.query(`
-      INSERT INTO users (id, email, password, role, name, phone, language, "createdAt", "updatedAt")
-      VALUES (gen_random_uuid(), 'pharmacist1@medilink.cm', $1, 'PHARMACIST', 'Jean Dupont', '+237691111111', 'FR', NOW(), NOW())
-      RETURNING id
-    `, [hashedPassword])
-    const pharmacist1Id = pharmacist1Result.rows[0].id
-
-    const pharmacist2Result = await client.query(`
-      INSERT INTO users (id, email, password, role, name, phone, language, "createdAt", "updatedAt")
-      VALUES (gen_random_uuid(), 'pharmacist2@medilink.cm', $1, 'PHARMACIST', 'Marie Martin', '+237692222222', 'FR', NOW(), NOW())
-      RETURNING id
-    `, [hashedPassword])
-    const pharmacist2Id = pharmacist2Result.rows[0].id
-
-    const pharmacist3Result = await client.query(`
-      INSERT INTO users (id, email, password, role, name, phone, language, "createdAt", "updatedAt")
-      VALUES (gen_random_uuid(), 'pharmacist3@medilink.cm', $1, 'PHARMACIST', 'Pierre Kouam', '+237695555555', 'FR', NOW(), NOW())
-      RETURNING id
-    `, [hashedPassword])
-    const pharmacist3Id = pharmacist3Result.rows[0].id
-    const originalPharmacistIds = [pharmacist1Id, pharmacist2Id, pharmacist3Id]
-    console.log('✅ Original pharmacist users created')
-
-    // Create patient users
-    const patient1Result = await client.query(`
-      INSERT INTO users (id, email, password, role, name, phone, location, language, "createdAt", "updatedAt")
-      VALUES (gen_random_uuid(), 'patient1@medilink.cm', $1, 'PATIENT', 'Alice Johnson', '+237693333333',
-              '{"latitude": 4.051056, "longitude": 9.767869}', 'FR', NOW(), NOW())
-      RETURNING id
-    `, [hashedPassword])
-    const patient1Id = patient1Result.rows[0].id
-
-    const patient2Result = await client.query(`
-      INSERT INTO users (id, email, password, role, name, phone, location, language, "createdAt", "updatedAt")
-      VALUES (gen_random_uuid(), 'patient2@medilink.cm', $1, 'PATIENT', 'Bob Wilson', '+237694444444',
-              '{"latitude": 3.866667, "longitude": 11.516667}', 'EN', NOW(), NOW())
-      RETURNING id
-    `, [hashedPassword])
-    const patient2Id = patient2Result.rows[0].id
-    const originalPatientIds = [patient1Id, patient2Id]
-    console.log('✅ Original patient users created')
-
-    // Create pharmacies
-    const pharmacy1Result = await client.query(`
-      INSERT INTO pharmacies (id, name, address, city, neighborhood, latitude, longitude, phone, "is_24_7", "owner_id", "is_approved", "createdAt", "updatedAt")
-      VALUES (gen_random_uuid(), 'Pharmacie Centrale de Douala', 'Rue de la République, Bonanjo', 'Douala', 'Bonanjo',
-              4.051056, 9.767869, '+237233000000', true, $1, true, NOW(), NOW())
-      RETURNING id
-    `, [pharmacist1Id])
-    const pharmacy1Id = pharmacy1Result.rows[0].id
-
-    const pharmacy2Result = await client.query(`
-      INSERT INTO pharmacies (id, name, address, city, neighborhood, latitude, longitude, phone, "is_24_7", "owner_id", "is_approved", "createdAt", "updatedAt")
-      VALUES (gen_random_uuid(), 'Pharmacie du Plateau', 'Avenue Kennedy, Plateau', 'Yaoundé', 'Plateau',
-              3.866667, 11.516667, '+237222000000', false, $1, true, NOW(), NOW())
-      RETURNING id
-    `, [pharmacist2Id])
-    const pharmacy2Id = pharmacy2Result.rows[0].id
-
-    const pharmacy3Result = await client.query(`
-      INSERT INTO pharmacies (id, name, address, city, neighborhood, latitude, longitude, phone, "is_24_7", "owner_id", "is_approved", "createdAt", "updatedAt")
-      VALUES (gen_random_uuid(), 'Pharmacie Familiale', 'Quartier Bastos', 'Yaoundé', 'Bastos',
-              3.868986, 11.523909, '+237222111111', false, $1, false, NOW(), NOW())
-      RETURNING id
-    `, [pharmacist3Id])
-    const pharmacy3Id = pharmacy3Result.rows[0].id
-    const originalPharmacyIds = [pharmacy1Id, pharmacy2Id, pharmacy3Id]
-    console.log('✅ Original pharmacies created')
-
-    // Create medications
-    const medications: string[] = []
-    const medsData = [
-      ['Paracétamol', 'Paracetamol', 'Comprimé', '500mg', 'Antalgique'],
-      ['Amoxicilline', 'Amoxicillin', 'Gélule', '500mg', 'Antibiotique'],
-      ['Ibuprofène', 'Ibuprofen', 'Comprimé', '400mg', 'Anti-inflammatoire'],
-      ['Vitamine C', 'Ascorbic Acid', 'Comprimé', '500mg', 'Vitamine'],
-      ['Oméprazole', 'Omeprazole', 'Gélule', '20mg', 'Antiulcéreux']
+    // Cameroon cities with realistic data
+    const citiesData = [
+      { nameFr: 'Yaoundé', nameEn: 'Yaounde', region: 'Centre' },
+      { nameFr: 'Douala', nameEn: 'Douala', region: 'Littoral' },
+      { nameFr: 'Bafoussam', nameEn: 'Bafoussam', region: 'Ouest' },
+      { nameFr: 'Bamenda', nameEn: 'Bamenda', region: 'Nord-Ouest' },
+      { nameFr: 'Garoua', nameEn: 'Garoua', region: 'Nord' },
+      { nameFr: 'Maroua', nameEn: 'Maroua', region: 'Extrême-Nord' },
+      { nameFr: 'Buea', nameEn: 'Buea', region: 'Sud-Ouest' },
+      { nameFr: 'Limbe', nameEn: 'Limbe', region: 'Sud-Ouest' },
+      { nameFr: 'Kribi', nameEn: 'Kribi', region: 'Sud' },
+      { nameFr: 'Ebolowa', nameEn: 'Ebolowa', region: 'Sud' }
     ]
 
-    for (const [name, dci, form, dosage, category] of medsData) {
-      const result = await client.query(`
-        INSERT INTO medications (id, name, dci, form, dosage, category, "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW(), NOW())
-        RETURNING id
-      `, [name, dci, form, dosage, category])
-      medications.push(result.rows[0].id)
-    }
-    const originalMedicationIds = [...medications]
-    console.log('✅ Original medications created')
+    const cities: any[] = []
+    for (const cityData of citiesData) {
+      const city = await prisma.city.create({
+        data: cityData
+      })
+      cities.push(city)
 
-    // Create stocks
-    const stocksData = [
-      [pharmacy1Id, medications[0], 150, 150.00, false], // Paracetamol
-      [pharmacy1Id, medications[1], 75, 2500.00, false], // Amoxicilline
-      [pharmacy1Id, medications[2], 0, 200.00, true],   // Ibuprofen (out of stock)
-      [pharmacy2Id, medications[0], 200, 140.00, false], // Paracetamol
-      [pharmacy2Id, medications[3], 50, 300.00, false],  // Vitamine C
-      [pharmacy3Id, medications[4], 25, 1500.00, false]  // Omeprazole
+      // Create districts for each city
+      await Promise.all([
+        prisma.district.create({
+          data: {
+            cityId: city.id,
+            nameFr: 'Centre-ville',
+            nameEn: 'City Center'
+          }
+        }),
+        prisma.district.create({
+          data: {
+            cityId: city.id,
+            nameFr: 'Quartier Administratif',
+            nameEn: 'Administrative District'
+          }
+        })
+      ])
+    }
+
+    // Medication categories (hiérarchie)
+    const categoriesData = [
+      { code: 'ANALG', nameFr: 'Antalgiques', nameEn: 'Analgesics', level: 1 },
+      { code: 'ANTIB', nameFr: 'Antibiotiques', nameEn: 'Antibiotics', level: 1 },
+      { code: 'ANTI_INFL', nameFr: 'Anti-inflammatoires', nameEn: 'Anti-inflammatories', level: 1 },
+      { code: 'VIT', nameFr: 'Vitamines', nameEn: 'Vitamins', level: 1 },
+      { code: 'CARDIO', nameFr: 'Cardiovasculaires', nameEn: 'Cardiovascular', level: 1 },
+      { code: 'DERM', nameFr: 'Dermatologiques', nameEn: 'Dermatological', level: 1 }
     ]
 
-    for (const [pharmacyId, medicationId, quantity, price, isOutOfStock] of stocksData) {
-      await client.query(`
-        INSERT INTO stocks (id, "pharmacy_id", "medication_id", quantity, "price_fcfa", "last_updated", "is_out_of_stock", "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), $5, NOW(), NOW())
-      `, [pharmacyId, medicationId, quantity, price, isOutOfStock])
+    const categories: any[] = []
+    for (const catData of categoriesData) {
+      const category = await prisma.category.upsert({
+        where: { code: catData.code },
+        update: {},
+        create: catData
+      })
+      categories.push(category)
     }
-    console.log('✅ Original stocks created')
 
-    // Create searches
-    await client.query(`
-      INSERT INTO searches (id, "user_id", "medication_id", latitude, longitude, "results_count", "createdAt")
-      VALUES (gen_random_uuid(), $1, $2, 4.051056, 9.767869, 2, NOW())
-    `, [patient1Id, medications[0]]) // Authenticated search with GPS
+    // Medication forms
+    const formsData = [
+      { code: 'TAB', nameFr: 'Comprimé', nameEn: 'Tablet' },
+      { code: 'CAP', nameFr: 'Gélule', nameEn: 'Capsule' },
+      { code: 'SYR', nameFr: 'Sirop', nameEn: 'Syrup' },
+      { code: 'INJ', nameFr: 'Injection', nameEn: 'Injection' },
+      { code: 'OINT', nameFr: 'Pommade', nameEn: 'Ointment' },
+      { code: 'DROP', nameFr: 'Gouttes', nameEn: 'Drops' }
+    ]
 
-    await client.query(`
-      INSERT INTO searches (id, "medication_id", latitude, longitude, "results_count", "createdAt")
-      VALUES (gen_random_uuid(), $1, 3.866667, 11.516667, 1, NOW())
-    `, [medications[1]]) // Anonymous search with GPS
-    console.log('✅ Original searches created')
+    const forms: any[] = []
+    for (const formData of formsData) {
+      const form = await prisma.medicationForm.upsert({
+        where: { code: formData.code },
+        update: {},
+        create: formData
+      })
+      forms.push(form)
+    }
 
-    // Create alerts
-    await client.query(`
-      INSERT INTO alerts (id, "user_id", "medication_id", "pharmacy_id", "contact_info", status, "createdAt")
-      VALUES (gen_random_uuid(), $1, $2, $3, $4, 'PENDING', NOW())
-    `, [patient1Id, medications[2], pharmacy1Id, 'patient1@medilink.cm']) // User alert
-
-    await client.query(`
-      INSERT INTO alerts (id, "medication_id", "contact_info", status, "createdAt")
-      VALUES (gen_random_uuid(), $1, '+237695555555', 'PENDING', NOW())
-    `, [medications[1]]) // Anonymous alert
-    console.log('✅ Original alerts created')
-
-    // Create audit logs
-    await client.query(`
-      INSERT INTO audit_logs (id, "user_id", action, details, "createdAt")
-      VALUES (gen_random_uuid(), $1, 'LOGIN', '{"ip": "127.0.0.1", "userAgent": "seed-script"}', NOW())
-    `, [adminId])
-    console.log('✅ Original audit logs created')
+    console.log('✅ Reference data created')
 
     // ============================================
-    // FAKER.JS DATA (additional fake data)
+    // USERS (PATIENTS, PHARMACISTS, ADMINS)
     // ============================================
-    console.log('')
-    console.log('🎲 Creating additional data with Faker.js...')
+    console.log('👥 Creating users...')
 
-    // Create additional pharmacist users (10 more)
-    const newPharmacistIds: string[] = []
-    for (let i = 0; i < 10; i++) {
-      const result = await client.query(`
-        INSERT INTO users (id, email, password, role, name, phone, language, "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, 'PHARMACIST', $3, $4, $5, NOW(), NOW())
-        RETURNING id
-      `, [
-        faker.internet.email({ firstName: faker.person.firstName(), lastName: faker.person.lastName() }),
-        hashedPassword,
-        faker.person.fullName(),
-        generateCameroonPhone(),
-        faker.helpers.arrayElement(['FR', 'EN'])
-      ])
-      newPharmacistIds.push(result.rows[0].id)
-    }
-    const pharmacistIds: string[] = [...originalPharmacistIds, ...newPharmacistIds]
-    console.log(`✅ ${10} additional pharmacist users created`)
+    const hashedPassword = await bcrypt.hash('password123', 10)
 
-    // Create additional patient users (50 more)
-    const patientIds: string[] = [...originalPatientIds]
-    for (let i = 0; i < 50; i++) {
-      const location = generateCameroonLocation()
-      const result = await client.query(`
-        INSERT INTO users (id, email, password, role, name, phone, location, language, "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, 'PATIENT', $3, $4, $5, $6, NOW(), NOW())
-        RETURNING id
-      `, [
-        faker.internet.email({ firstName: faker.person.firstName(), lastName: faker.person.lastName() }),
-        hashedPassword,
-        faker.person.fullName(),
-        generateCameroonPhone(),
-        JSON.stringify(location),
-        faker.helpers.arrayElement(['FR', 'EN'])
-      ])
-      patientIds.push(result.rows[0].id)
-    }
-    console.log(`✅ ${50} additional patient users created`)
-
-    // Create additional pharmacies (one per new pharmacist only)
-    const pharmacyIds: string[] = [...originalPharmacyIds]
-    for (const pharmacistId of newPharmacistIds) {
-      const city = generateCameroonCity()
-      const location = generateCameroonLocation()
-      const result = await client.query(`
-        INSERT INTO pharmacies (id, name, address, city, neighborhood, latitude, longitude, phone, "is_24_7", "owner_id", "is_approved", "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-        RETURNING id
-      `, [
-        `Pharmacie ${faker.company.name()}`,
-        faker.location.streetAddress(),
-        city,
-        faker.location.secondaryAddress(),
-        location.latitude,
-        location.longitude,
-        generateCameroonPhone(),
-        faker.datatype.boolean(),
-        pharmacistId,
-        faker.datatype.boolean({ probability: 0.8 }) // 80% approved
-      ])
-      pharmacyIds.push(result.rows[0].id)
-    }
-    console.log(`✅ ${newPharmacistIds.length} additional pharmacies created`)
-
-    // Create additional medications (30 more)
-    const medicationIds: string[] = [...originalMedicationIds]
-    for (let i = 0; i < 30; i++) {
-      const form = generateMedicationForm()
-      const category = generateMedicationCategory()
-      const result = await client.query(`
-        INSERT INTO medications (id, name, dci, form, dosage, category, "createdAt", "updatedAt")
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW(), NOW())
-        RETURNING id
-      `, [
-        faker.commerce.productName(),
-        faker.word.noun() + ' ' + faker.word.noun(), // DCI générique
-        form,
-        generateDosage(),
-        category
-      ])
-      medicationIds.push(result.rows[0].id)
-    }
-    console.log(`✅ ${30} additional medications created`)
-
-    // Create additional stocks (random stocks for each pharmacy)
-    let additionalStockCount = 0
-    for (const pharmacyId of pharmacyIds) {
-      // Ensure connection is still active before processing each pharmacy
-      await ensureConnection()
-      
-      // Each pharmacy has 5-15 different medications in stock
-      const numMedications = faker.number.int({ min: 5, max: 15 })
-      const selectedMedications = faker.helpers.arrayElements(medicationIds, numMedications)
-      
-      for (const medicationId of selectedMedications) {
-        try {
-          // Check if stock already exists (for original pharmacies with original medications)
-          const existingStock = await client.query(`
-            SELECT id FROM stocks WHERE "pharmacy_id" = $1 AND "medication_id" = $2
-          `, [pharmacyId, medicationId])
-          
-          if (existingStock.rows.length === 0) {
-            const quantity = faker.number.int({ min: 0, max: 500 })
-            const isOutOfStock = quantity === 0
-            const price = parseFloat(faker.commerce.price({ min: 100, max: 10000, dec: 2 }))
-            
-            await client.query(`
-              INSERT INTO stocks (id, "pharmacy_id", "medication_id", quantity, "price_fcfa", "last_updated", "is_out_of_stock", "createdAt", "updatedAt")
-              VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), $5, NOW(), NOW())
-            `, [pharmacyId, medicationId, quantity, price, isOutOfStock])
-            additionalStockCount++
-          }
-        } catch (error: any) {
-          if (error.code === '57P01' || error.message?.includes('Connection terminated')) {
-            console.log('⚠️  Connection lost during stock creation, reconnecting...')
-            await ensureConnection()
-            // Retry the operation
-            const quantity = faker.number.int({ min: 0, max: 500 })
-            const isOutOfStock = quantity === 0
-            const price = parseFloat(faker.commerce.price({ min: 100, max: 10000, dec: 2 }))
-            await client.query(`
-              INSERT INTO stocks (id, "pharmacy_id", "medication_id", quantity, "price_fcfa", "last_updated", "is_out_of_stock", "createdAt", "updatedAt")
-              VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), $5, NOW(), NOW())
-            `, [pharmacyId, medicationId, quantity, price, isOutOfStock])
-            additionalStockCount++
-          } else {
-            throw error
-          }
-        }
+    // Admin user
+    const admin = await prisma.user.upsert({
+      where: { email: 'admin@medilink.cm' },
+      update: {},
+      create: {
+        email: 'admin@medilink.cm',
+        passwordHash: hashedPassword,
+        role: 'ADMIN',
+        fullName: 'Admin MediLink',
+        phone: '+237690000000',
+        preferredLanguage: 'FR'
       }
-    }
-    console.log(`✅ ${additionalStockCount} additional stock entries created`)
+    })
 
-    // Create additional searches (100 more)
+    // Pharmacists
+    const pharmacists: any[] = []
+    for (let i = 0; i < 15; i++) {
+      const pharmacist = await prisma.user.upsert({
+        where: { email: `pharmacist${i}@medilink.cm` },
+        update: {},
+        create: {
+          email: `pharmacist${i}@medilink.cm`,
+          passwordHash: hashedPassword,
+          role: 'PHARMACIST',
+          fullName: faker.person.fullName(),
+          phone: `+23769${faker.string.numeric(7)}`,
+          preferredLanguage: faker.helpers.arrayElement(['FR', 'EN'])
+        }
+      })
+      pharmacists.push(pharmacist)
+    }
+
+    // Patients
+    const patients: any[] = []
     for (let i = 0; i < 100; i++) {
-      // Check connection every 20 searches
-      if (i % 20 === 0) {
-        await ensureConnection()
-      }
-      
-      const location = generateCameroonLocation()
-      const hasUser = faker.datatype.boolean({ probability: 0.7 }) // 70% authenticated searches
-      const userId = hasUser ? faker.helpers.arrayElement(patientIds) : null
-      const medicationId = faker.helpers.arrayElement(medicationIds)
-      const resultsCount = faker.number.int({ min: 0, max: 10 })
-
-      try {
-        if (userId) {
-          await client.query(`
-            INSERT INTO searches (id, "user_id", "medication_id", latitude, longitude, "results_count", "createdAt")
-            VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW())
-          `, [userId, medicationId, location.latitude, location.longitude, resultsCount])
-        } else {
-          await client.query(`
-            INSERT INTO searches (id, "medication_id", latitude, longitude, "results_count", "createdAt")
-            VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW())
-          `, [medicationId, location.latitude, location.longitude, resultsCount])
+      const patient = await prisma.user.upsert({
+        where: { email: `patient${i}@medilink.cm` },
+        update: {},
+        create: {
+          email: `patient${i}@medilink.cm`,
+          passwordHash: hashedPassword,
+          role: 'PATIENT',
+          fullName: faker.person.fullName(),
+          phone: `+23769${faker.string.numeric(7)}`,
+          preferredLanguage: faker.helpers.arrayElement(['FR', 'EN'])
         }
-      } catch (error: any) {
-        if (error.code === '57P01' || error.message?.includes('Connection terminated')) {
-          await ensureConnection()
-          // Retry
-          if (userId) {
-            await client.query(`
-              INSERT INTO searches (id, "user_id", "medication_id", latitude, longitude, "results_count", "createdAt")
-              VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW())
-            `, [userId, medicationId, location.latitude, location.longitude, resultsCount])
-          } else {
-            await client.query(`
-              INSERT INTO searches (id, "medication_id", latitude, longitude, "results_count", "createdAt")
-              VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW())
-            `, [medicationId, location.latitude, location.longitude, resultsCount])
-          }
-        } else {
-          throw error
-        }
-      }
+      })
+      patients.push(patient)
     }
-    console.log('✅ 100 additional searches created')
 
-    // Create additional alerts (50 more)
-    for (let i = 0; i < 50; i++) {
-      // Check connection every 25 alerts
-      if (i % 25 === 0) {
-        await ensureConnection()
-      }
-      
-      const hasUser = faker.datatype.boolean({ probability: 0.6 }) // 60% user alerts
-      const userId = hasUser ? faker.helpers.arrayElement(patientIds) : null
-      const medicationId = faker.helpers.arrayElement(medicationIds)
-      const hasPharmacy = faker.datatype.boolean({ probability: 0.5 })
-      const pharmacyId = hasPharmacy ? faker.helpers.arrayElement(pharmacyIds) : null
-      const contactInfo = hasUser 
-        ? faker.internet.email() 
-        : generateCameroonPhone()
-      const status = faker.helpers.arrayElement(['PENDING', 'SENT'])
+    console.log('✅ Users created')
 
-      try {
-        if (userId && pharmacyId) {
-          await client.query(`
-            INSERT INTO alerts (id, "user_id", "medication_id", "pharmacy_id", "contact_info", status, "createdAt")
-            VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW())
-          `, [userId, medicationId, pharmacyId, contactInfo, status])
-        } else if (userId) {
-          await client.query(`
-            INSERT INTO alerts (id, "user_id", "medication_id", "contact_info", status, "createdAt")
-            VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW())
-          `, [userId, medicationId, contactInfo, status])
-        } else {
-          await client.query(`
-            INSERT INTO alerts (id, "medication_id", "contact_info", status, "createdAt")
-            VALUES (gen_random_uuid(), $1, $2, $3, NOW())
-          `, [medicationId, contactInfo, status])
+    // ============================================
+    // PHARMACIES (with addresses)
+    // ============================================
+    console.log('🏥 Creating pharmacies with addresses...')
+
+    const pharmacies: any[] = []
+    for (const pharmacist of pharmacists) {
+      const city = faker.helpers.arrayElement(cities)
+      const district = faker.helpers.arrayElement(await prisma.district.findMany({
+        where: { cityId: city.id }
+      }))
+
+      // Create address
+      const address = await prisma.address.create({
+        data: {
+          cityId: city.id,
+          districtId: district.id,
+          streetAddress: faker.location.streetAddress(),
+          landmark: faker.company.name(),
+          postalCode: faker.location.zipCode(),
+          latitude: parseFloat(faker.location.latitude({ min: 1.65, max: 13.08 }).toFixed(8)),
+          longitude: parseFloat(faker.location.longitude({ min: 8.49, max: 16.19 }).toFixed(8))
         }
-      } catch (error: any) {
-        if (error.code === '57P01' || error.message?.includes('Connection terminated')) {
-          await ensureConnection()
-          // Retry
-          if (userId && pharmacyId) {
-            await client.query(`
-              INSERT INTO alerts (id, "user_id", "medication_id", "pharmacy_id", "contact_info", status, "createdAt")
-              VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW())
-            `, [userId, medicationId, pharmacyId, contactInfo, status])
-          } else if (userId) {
-            await client.query(`
-              INSERT INTO alerts (id, "user_id", "medication_id", "contact_info", status, "createdAt")
-              VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW())
-            `, [userId, medicationId, contactInfo, status])
-          } else {
-            await client.query(`
-              INSERT INTO alerts (id, "medication_id", "contact_info", status, "createdAt")
-              VALUES (gen_random_uuid(), $1, $2, $3, NOW())
-            `, [medicationId, contactInfo, status])
-          }
-        } else {
-          throw error
-        }
-      }
-    }
-    console.log('✅ 50 additional alerts created')
-
-    // Create additional audit logs (200 more)
-    const allUserIds = [adminId, ...pharmacistIds, ...patientIds]
-    const actions = ['LOGIN', 'LOGOUT', 'CREATE', 'UPDATE', 'DELETE', 'SEARCH', 'VIEW']
-    
-    for (let i = 0; i < 200; i++) {
-      // Check connection every 50 logs
-      if (i % 50 === 0) {
-        await ensureConnection()
-      }
-      
-      const userId = faker.helpers.arrayElement(allUserIds)
-      const action = faker.helpers.arrayElement(actions)
-      const details = JSON.stringify({
-        ip: faker.internet.ip(),
-        userAgent: faker.internet.userAgent(),
-        timestamp: faker.date.recent().toISOString()
       })
 
-      try {
-        await client.query(`
-          INSERT INTO audit_logs (id, "user_id", action, details, "createdAt")
-          VALUES (gen_random_uuid(), $1, $2, $3, NOW())
-        `, [userId, action, details])
-      } catch (error: any) {
-        if (error.code === '57P01' || error.message?.includes('Connection terminated')) {
-          await ensureConnection()
-          // Retry
-          await client.query(`
-            INSERT INTO audit_logs (id, "user_id", action, details, "createdAt")
-            VALUES (gen_random_uuid(), $1, $2, $3, NOW())
-          `, [userId, action, details])
-        } else {
-          throw error
+      // Create pharmacy
+      const pharmacy = await prisma.pharmacy.create({
+        data: {
+          name: `Pharmacie ${faker.company.name()}`,
+          addressId: address.id,
+          licenseNumber: `LIC${faker.string.numeric(6)}`,
+          phone: `+237${faker.string.numeric(9)}`,
+          emergencyPhone: `+237${faker.string.numeric(9)}`,
+          is24_7: faker.datatype.boolean(),
+          openingTime: new Date('1970-01-01T08:00:00Z'),
+          closingTime: new Date('1970-01-01T18:00:00Z'),
+          workingDays: [1,2,3,4,5,6,7], // All days
+          ownerId: pharmacist.id,
+          isVerified: faker.datatype.boolean({ probability: 0.8 })
         }
+      })
+      pharmacies.push(pharmacy)
+    }
+
+    console.log('✅ Pharmacies created')
+
+    // ============================================
+    // MEDICATIONS
+    // ============================================
+    console.log('💊 Creating medications...')
+
+    const medications: any[] = []
+    const medicationData = [
+      { commercialName: 'Paracétamol', dciName: 'Paracetamol', dosageStrength: '500', dosageUnit: 'mg', requiresPrescription: false },
+      { commercialName: 'Amoxicilline', dciName: 'Amoxicillin', dosageStrength: '500', dosageUnit: 'mg', requiresPrescription: true },
+      { commercialName: 'Ibuprofène', dciName: 'Ibuprofen', dosageStrength: '400', dosageUnit: 'mg', requiresPrescription: false },
+      { commercialName: 'Vitamine C', dciName: 'Ascorbic Acid', dosageStrength: '500', dosageUnit: 'mg', requiresPrescription: false },
+      { commercialName: 'Oméprazole', dciName: 'Omeprazole', dosageStrength: '20', dosageUnit: 'mg', requiresPrescription: false },
+      { commercialName: 'Doliprane', dciName: 'Paracetamol', dosageStrength: '1000', dosageUnit: 'mg', requiresPrescription: false },
+      { commercialName: 'Augmentin', dciName: 'Amoxicillin + Clavulanic acid', dosageStrength: '875/125', dosageUnit: 'mg', requiresPrescription: true },
+      { commercialName: 'Voltarène', dciName: 'Diclofenac', dosageStrength: '50', dosageUnit: 'mg', requiresPrescription: false }
+    ]
+
+    for (const medData of medicationData) {
+      const medication = await prisma.medication.create({
+        data: {
+          ...medData,
+          categoryId: faker.helpers.arrayElement(categories).id,
+          formId: faker.helpers.arrayElement(forms).id
+        }
+      })
+      medications.push(medication)
+    }
+
+    // Additional fake medications
+    for (let i = 0; i < 50; i++) {
+      const medication = await prisma.medication.create({
+        data: {
+          commercialName: faker.commerce.productName(),
+          dciName: faker.word.noun() + ' ' + faker.word.adjective(),
+          categoryId: faker.helpers.arrayElement(categories).id,
+          formId: faker.helpers.arrayElement(forms).id,
+          dosageStrength: faker.helpers.arrayElement(['100', '250', '500', '1000']),
+          dosageUnit: faker.helpers.arrayElement(['mg', 'ml', 'g']),
+          requiresPrescription: faker.datatype.boolean({ probability: 0.3 })
+        }
+      })
+      medications.push(medication)
+    }
+
+    console.log('✅ Medications created')
+
+    // ============================================
+    // INVENTORY ITEMS (remplace stocks)
+    // ============================================
+    console.log('📦 Creating inventory items...')
+
+    for (const pharmacy of pharmacies) {
+      // Each pharmacy has 10-20 different medications
+      const pharmacyMeds = faker.helpers.arrayElements(medications, faker.number.int({ min: 10, max: 20 }))
+
+      for (const medication of pharmacyMeds) {
+        await prisma.inventoryItem.create({
+          data: {
+            pharmacyId: pharmacy.id,
+            medicationId: medication.id,
+            batchNumber: `BATCH${faker.string.numeric(6)}`,
+            expirationDate: faker.date.future({ years: 2 }),
+            quantityInStock: faker.number.int({ min: 0, max: 500 }),
+            unitPriceFcfa: parseFloat(faker.commerce.price({ min: 100, max: 5000, dec: 2 })),
+            sellingPriceFcfa: parseFloat(faker.commerce.price({ min: 200, max: 10000, dec: 2 })),
+            lastRestocked: faker.date.recent()
+          }
+        })
       }
     }
-    console.log('✅ 200 additional audit logs created')
 
-    console.log('🎉 Database seeded successfully!')
+    console.log('✅ Inventory items created')
+
+    // ============================================
+    // SEARCHES
+    // ============================================
+    console.log('🔍 Creating searches...')
+
+    for (let i = 0; i < 200; i++) {
+      const hasUser = faker.datatype.boolean({ probability: 0.7 })
+      const user = hasUser ? faker.helpers.arrayElement(patients) : null
+
+      await prisma.search.create({
+        data: {
+          userId: user?.id,
+          medicationId: faker.helpers.arrayElement(medications).id,
+          latitude: parseFloat(faker.location.latitude({ min: 1.65, max: 13.08 }).toFixed(8)),
+          longitude: parseFloat(faker.location.longitude({ min: 8.49, max: 16.19 }).toFixed(8)),
+          radiusKm: faker.number.int({ min: 1, max: 50 }),
+          filtersApplied: {
+            is24_7: faker.datatype.boolean(),
+            maxPrice: faker.number.int({ min: 100, max: 5000 })
+          },
+          resultsFound: faker.number.int({ min: 0, max: 20 })
+        }
+      })
+    }
+
+    console.log('✅ Searches created')
+
+    // ============================================
+    // STOCK ALERTS (remplace alerts)
+    // ============================================
+    console.log('🔔 Creating stock alerts...')
+
+    for (let i = 0; i < 100; i++) {
+      const user = faker.helpers.arrayElement(patients)
+      const medication = faker.helpers.arrayElement(medications)
+      const hasPharmacy = faker.datatype.boolean({ probability: 0.5 })
+      const pharmacy = hasPharmacy ? faker.helpers.arrayElement(pharmacies) : null
+
+      await prisma.stockAlert.create({
+        data: {
+          userId: user.id,
+          medicationId: medication.id,
+          pharmacyId: pharmacy?.id,
+          notificationChannel: faker.helpers.arrayElement(['EMAIL', 'SMS', 'PUSH']),
+          contactInfo: faker.datatype.boolean() ? faker.internet.email() : `+237${faker.string.numeric(9)}`,
+          status: faker.helpers.arrayElement(['ACTIVE', 'TRIGGERED', 'EXPIRED']),
+          triggeredAt: faker.datatype.boolean() ? faker.date.recent() : null,
+          expiresAt: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000) // 6 months from now
+        }
+      })
+    }
+
+    console.log('✅ Stock alerts created')
+
+    // ============================================
+    // PRICE HISTORY
+    // ============================================
+    console.log('💰 Creating price history...')
+
+    const inventoryItems = await prisma.inventoryItem.findMany()
+    for (const item of faker.helpers.arrayElements(inventoryItems, 50)) {
+      await prisma.priceHistory.create({
+        data: {
+          inventoryItemId: item.id,
+          oldPriceFcfa: parseFloat(faker.commerce.price({ min: 50, max: 1000, dec: 2 })),
+          newPriceFcfa: item.sellingPriceFcfa,
+          changedBy: faker.helpers.arrayElement(pharmacists).id
+        }
+      })
+    }
+
+    console.log('✅ Price history created')
+
+    // ============================================
+    // ADMIN ANALYTICS
+    // ============================================
+    console.log('📊 Creating admin analytics...')
+
+    for (let i = 0; i < 30; i++) {
+      await prisma.adminAnalytics.create({
+        data: {
+          analyticsDate: faker.date.recent({ days: 30 }),
+          totalSearches: faker.number.int({ min: 100, max: 1000 }),
+          successfulSearches: faker.number.int({ min: 50, max: 800 }),
+          newUsers: faker.number.int({ min: 1, max: 20 }),
+          activePharmacies: faker.number.int({ min: 5, max: 50 }),
+          topMedications: Array.from({ length: 10 }, () => ({
+            id: faker.helpers.arrayElement(medications).id,
+            name: faker.commerce.productName(),
+            searches: faker.number.int({ min: 10, max: 200 })
+          })),
+          searchHeatmap: Array.from({ length: 20 }, () => ({
+            lat: parseFloat(faker.location.latitude({ min: 1.65, max: 13.08 }).toFixed(6)),
+            lng: parseFloat(faker.location.longitude({ min: 8.49, max: 16.19 }).toFixed(6)),
+            intensity: faker.number.int({ min: 1, max: 100 })
+          }))
+        }
+      })
+    }
+
+    console.log('✅ Admin analytics created')
+
+    // ============================================
+    // SYSTEM AUDIT LOGS
+    // ============================================
+    console.log('📋 Creating system audit logs...')
+
+    const allUsers = [admin, ...pharmacists, ...patients]
+    const actions = ['CREATE', 'UPDATE', 'DELETE'] // Only valid ActionType enum values
+
+    for (let i = 0; i < 500; i++) {
+      const user = faker.helpers.arrayElement(allUsers)
+      const action = faker.helpers.arrayElement(actions)
+
+      await prisma.systemAuditLog.create({
+        data: {
+          userId: user.id,
+          actionType: action as any,
+          entityType: faker.helpers.arrayElement(['USER', 'PHARMACY', 'MEDICATION', 'SEARCH', 'ALERT']),
+          entityId: faker.string.uuid(),
+          oldValues: faker.datatype.boolean() ? { oldField: faker.lorem.word() } : undefined,
+          newValues: faker.datatype.boolean() ? { newField: faker.lorem.word() } : undefined,
+          ipAddress: faker.internet.ip()
+        }
+      })
+    }
+
+    console.log('✅ System audit logs created')
+
     console.log('')
+    console.log('🎉 Database seeded successfully with new MLD v2 schema!')
     console.log('📊 Summary:')
 
-    const summary = await Promise.all([
-      client.query('SELECT COUNT(*) as count FROM users'),
-      client.query('SELECT COUNT(*) as count FROM pharmacies'),
-      client.query('SELECT COUNT(*) as count FROM medications'),
-      client.query('SELECT COUNT(*) as count FROM stocks'),
-      client.query('SELECT COUNT(*) as count FROM searches'),
-      client.query('SELECT COUNT(*) as count FROM alerts'),
-      client.query('SELECT COUNT(*) as count FROM audit_logs')
+    const [
+      userCount,
+      pharmacyCount,
+      medicationCount,
+      inventoryCount,
+      searchCount,
+      alertCount,
+      auditCount
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.pharmacy.count(),
+      prisma.medication.count(),
+      prisma.inventoryItem.count(),
+      prisma.search.count(),
+      prisma.stockAlert.count(),
+      prisma.systemAuditLog.count()
     ])
 
-    console.log(`- ${summary[0].rows[0].count} users`)
-    console.log(`- ${summary[1].rows[0].count} pharmacies`)
-    console.log(`- ${summary[2].rows[0].count} medications`)
-    console.log(`- ${summary[3].rows[0].count} stock entries`)
-    console.log(`- ${summary[4].rows[0].count} searches`)
-    console.log(`- ${summary[5].rows[0].count} alerts`)
-    console.log(`- ${summary[6].rows[0].count} audit logs`)
+    console.log(`- ${userCount} users (patients: ${patients.length}, pharmacists: ${pharmacists.length}, admins: 1)`)
+    console.log(`- ${pharmacyCount} pharmacies`)
+    console.log(`- ${medicationCount} medications`)
+    console.log(`- ${inventoryCount} inventory items`)
+    console.log(`- ${searchCount} searches`)
+    console.log(`- ${alertCount} stock alerts`)
+    console.log(`- ${auditCount} audit logs`)
 
-  } finally {
-    await client.end()
+  } catch (error) {
+    console.error('❌ Error seeding database:', error)
+    throw error
   }
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Error seeding database:', e)
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
     process.exit(1)
   })

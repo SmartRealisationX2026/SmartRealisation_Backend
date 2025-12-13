@@ -3,11 +3,67 @@ erDiagram
         uuid id PK
         varchar email
         varchar password_hash
-        varchar role "patient|pharmacist|admin"
-        varchar name
+        varchar role "PATIENT|PHARMACIST|ADMIN"
+        varchar full_name
         varchar phone
-        jsonb location "géolocalisation"
-        varchar language "fr|en"
+        varchar preferred_language "fr|en"
+        timestamp created_at
+        timestamp updated_at
+        boolean is_active
+    }
+
+    addresses {
+        uuid id PK
+        uuid city_id FK
+        uuid district_id FK
+        varchar street_address
+        varchar landmark
+        varchar postal_code
+        decimal latitude "10,8"
+        decimal longitude "11,8"
+    }
+
+    cities {
+        uuid id PK
+        varchar name_fr
+        varchar name_en
+        varchar region "Centre|Littoral|...|10 régions"
+    }
+
+    districts {
+        uuid id PK
+        uuid city_id FK
+        varchar name_fr
+        varchar name_en
+    }
+
+    categories {
+        uuid id PK
+        varchar code "CAT_ANALG|CAT_ANTIB|..."
+        varchar name_fr
+        varchar name_en
+        varchar description
+        integer level "1=major, 2=sub-catégorie"
+        uuid parent_id FK "pour hiérarchie"
+    }
+
+    medication_forms {
+        uuid id PK
+        varchar code "TABLET|CAPSULE|SYRUP|..."
+        varchar name_fr
+        varchar name_en
+        varchar description
+    }
+
+    medications {
+        uuid id PK
+        varchar commercial_name
+        varchar dci_name
+        uuid category_id FK
+        uuid form_id FK
+        varchar dosage_strength "500mg, 1000mg, etc."
+        varchar dosage_unit "mg, g, ml, %"
+        boolean requires_prescription
         timestamp created_at
         timestamp updated_at
     }
@@ -15,77 +71,110 @@ erDiagram
     pharmacies {
         uuid id PK
         varchar name
-        varchar address
-        varchar city
-        varchar neighborhood
-        decimal latitude
-        decimal longitude
+        uuid address_id FK
+        varchar license_number
         varchar phone
+        varchar emergency_phone
         boolean is_24_7
-        uuid owner_id FK "pharmacist"
-        boolean is_approved
+        time opening_time
+        time closing_time
+        jsonb working_days "[1,2,3,4,5,6,7] pour lundi-dimanche"
+        uuid owner_id FK "user avec rôle PHARMACIST"
+        boolean is_verified
+        timestamp verified_at
         timestamp created_at
         timestamp updated_at
     }
 
-    medications {
-        uuid id PK
-        varchar name
-        varchar dci
-        varchar form
-        varchar dosage
-        varchar category
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    stocks {
+    inventory_items {
         uuid id PK
         uuid pharmacy_id FK
         uuid medication_id FK
-        integer quantity
-        decimal price_fcfa
-        timestamp last_updated
-        boolean is_out_of_stock
-        timestamp created_at
+        varchar batch_number
+        date expiration_date
+        integer quantity_in_stock
+        decimal unit_price_fcfa
+        decimal selling_price_fcfa
+        boolean is_available
+        timestamp last_restocked
         timestamp updated_at
     }
 
     searches {
         uuid id PK
-        uuid user_id FK "nullable (anonymous)"
+        uuid user_id FK "nullable pour anonyme"
         uuid medication_id FK
         decimal latitude
         decimal longitude
-        integer results_count
-        timestamp created_at
+        integer radius_km
+        jsonb filters_applied
+        integer results_found
+        timestamp searched_at
     }
 
-    alerts {
+    price_history {
         uuid id PK
-        uuid user_id FK "nullable"
-        uuid medication_id FK
-        uuid pharmacy_id FK
-        varchar contact_info "email or phone"
-        varchar status "pending|sent"
-        timestamp created_at
-        timestamp sent_at
+        uuid inventory_item_id FK
+        decimal old_price_fcfa
+        decimal new_price_fcfa
+        timestamp changed_at
+        uuid changed_by FK "user_id"
     }
 
-    audit_logs {
+    stock_alerts {
         uuid id PK
         uuid user_id FK
-        varchar action
-        jsonb details
+        uuid medication_id FK
+        uuid pharmacy_id FK "nullable si toutes pharmacies"
+        varchar notification_channel "EMAIL|SMS|PUSH"
+        varchar contact_info
+        varchar status "ACTIVE|TRIGGERED|EXPIRED"
+        timestamp created_at
+        timestamp triggered_at
+        timestamp expires_at
+    }
+
+    admin_analytics {
+        uuid id PK
+        date analytics_date
+        integer total_searches
+        integer successful_searches
+        integer new_users
+        integer active_pharmacies
+        jsonb top_medications "JSON array des top 10"
+        jsonb search_heatmap "géodonnées agrégées"
+        timestamp generated_at
+    }
+
+    system_audit_logs {
+        uuid id PK
+        uuid user_id FK "qui a fait l'action"
+        varchar action_type "CREATE|UPDATE|DELETE"
+        varchar entity_type "MEDICATION|PHARMACY|..."
+        uuid entity_id
+        jsonb old_values
+        jsonb new_values
+        varchar ip_address
         timestamp created_at
     }
 
+    %% Relations principales
+    users ||--o{ pharmacies : owns
     users ||--o{ searches : performs
-    users ||--o{ alerts : subscribes
-    pharmacies ||--o{ stocks : contains
-    medications ||--o{ stocks : has
+    users ||--o{ stock_alerts : creates
+    users ||--o{ system_audit_logs : generates
+
+    pharmacies ||--o{ inventory_items : contains
+    pharmacies ||--|| addresses : located_at
+
+    medications ||--o{ inventory_items : appears_in
     medications ||--o{ searches : searched_for
-    pharmacies ||--o{ alerts : notifies_about
-    
-    users ||--o| pharmacies : owns
-    users ||--o{ audit_logs : creates
+    medications ||--o{ stock_alerts : monitored_by
+
+    addresses ||--|| cities : belongs_to
+    addresses ||--|| districts : belongs_to
+
+    categories ||--o{ medications : classifies
+    medication_forms ||--o{ medications : defines_form
+
+    inventory_items ||--o{ price_history : tracks_changes

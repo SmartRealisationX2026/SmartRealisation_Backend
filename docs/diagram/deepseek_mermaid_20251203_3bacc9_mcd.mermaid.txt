@@ -1,112 +1,133 @@
 classDiagram
-    class Utilisateur {
-        +uuid id
-        +string email
-        +string rôle (patient/pharmacien/admin)
-        +string nom
-        +string téléphone
-        +Position localisation
-        +string langue
+    namespace SystèmeMediLink {
+        class Utilisateur {
+            +UUID id
+            +String email
+            +Rôle rôle
+            +Profil profil
+            +Préférences préférences
+        }
+
+        class Adresse {
+            +Ville ville
+            +Arrondissement arrondissement
+            +String rue
+            +PointGPS coordonnées
+        }
+
+        class Médicament {
+            +String nomCommercial
+            +DCI dénominationCommune
+            +Catégorie catégorie
+            +Forme forme
+            +Dosage dosageRéférence
+            +bool prescriptionObligatoire
+        }
+
+        class Pharmacie {
+            +String nom
+            +Adresse adresse
+            +Horaires horaires
+            +Contact contact
+            +StatusÉtablissement statut
+            +[Inventaire] stocks
+        }
+
+        class ItemInventaire {
+            +Médicament médicament
+            +String lot
+            +Date expiration
+            +Quantité quantité
+            +Prix prix
+            +bool disponible
+        }
+
+        class Recherche {
+            +Médicament médicamentCible
+            +Localisation localisation
+            +Filtres filtres
+            +[Pharmacie] résultats
+            +DateHeure dateRecherche
+        }
+
+        class SystèmeAnalytique {
+            +DashboardAdmin dashboard
+            +HeatmapCartographique heatmap
+            +RapportsMétier rapports
+            +AlertesSystème alertes
+        }
     }
 
-    class Pharmacie {
-        +uuid id
-        +string nom
-        +Adresse adresse
-        +Position géolocalisation
-        +string téléphone
-        +bool 24/7
-        +Pharmacien propriétaire
-        +bool approuvée
+    %% Valeurs et Entités de Référence
+    class Rôle {
+        <<enumération>>
+        PATIENT
+        PHARMACIEN
+        ADMINISTRATEUR
     }
 
-    class Médicament {
-        +uuid id
-        +string nom
-        +string DCI
-        +string forme
-        +string dosage
-        +string catégorie
+    class Catégorie {
+        +String code
+        +String nomFr
+        +String nomEn
+        +Catégorie parent
     }
 
-    class Stock {
-        +uuid id
-        +Pharmacie pharmacie
-        +Médicament médicament
-        +int quantité
-        +decimal prix_FCFA
-        +bool rupture_stock
-        +datetime dernière_maj
+    class Forme {
+        +String code
+        +String nomFr
+        +String nomEn
     }
 
-    class Recherche {
-        +uuid id
-        +Utilisateur utilisateur (optionnel)
-        +Médicament médicament
-        +Position localisation_recherche
-        +int nombre_résultats
-        +datetime date
+    class DCI {
+        +String codeATC
+        +String nomInternational
+        +String classeThérapeutique
     }
 
-    class Alerte {
-        +uuid id
-        +Utilisateur abonné (optionnel)
-        +Médicament médicament
-        +Pharmacie pharmacie
-        +string contact (email/téléphone)
-        +string statut
+    class PointGPS {
+        +Decimal latitude
+        +Decimal longitude
     }
 
-    class DashboardAdmin {
-        +int recherches_total
-        +int pharmacies_actives
-        +float taux_succès
-        +List~Médicament~ top_médicaments
-        +HeatMap cartographie_recherches
+    class Quantité {
+        +int valeur
+        +String unité
+    }
+
+    class Prix {
+        +Decimal montant
+        +String devise "FCFA"
     }
 
     %% Relations
-    Utilisateur "1" --> "0..*" Recherche : effectue
-    Utilisateur "1" --> "0..*" Alerte : s'abonne à
-    Pharmacien "1" --> "1..*" Pharmacie : gère
-    Pharmacie "1" --> "0..*" Stock : contient
-    Médicament "1" --> "0..*" Stock : disponible dans
-    Recherche "1" --> "1" Médicament : recherche
-    Alerte "1" --> "1" Médicament : concerne
-    Alerte "1" --> "1" Pharmacie : concerne
-    
-    %% Classes de valeur
-    class Adresse {
-        +string rue
-        +string ville
-        +string quartier
-    }
-    
-    class Position {
-        +decimal latitude
-        +decimal longitude
-    }
-    
-    class HeatMap {
-        +Map~Position,int~ intensité_recherches
-        +Map~Quartier,List~Médicament~~ top_par_zone
-    }
+    Utilisateur "1" -- "*" Recherche : effectue
+    Utilisateur "1" -- "0..*" Pharmacie : possède
+    Médicament "*" -- "1" Catégorie : appartient_à
+    Médicament "*" -- "1" Forme : a_pour_forme
+    Pharmacie "1" -- "*" ItemInventaire : détient
+    ItemInventaire "*" -- "1" Médicament : référence
+    Recherche "1" -- "1" Médicament : cible
+    Recherche "1" -- "*" Pharmacie : retourne
+    SystèmeAnalytique "1" -- "*" Recherche : analyse
+    Pharmacie "1" -- "1" Adresse : située_à
 
-    %% Héritage rôles
+    %% Spécialisations
     Utilisateur <|-- Patient
     Utilisateur <|-- Pharmacien
     Utilisateur <|-- Administrateur
-    
+
     class Patient {
-        +HistoriqueRecherche[] historique
+        +HistoriqueRecherche historique
+        +[AlerteStock] alertes
     }
-    
+
     class Pharmacien {
-        +Pharmacie[] pharmacies_gérées
+        +[Pharmacie] établissements
         +DashboardPharmacien dashboard
     }
-    
+
     class Administrateur {
-        +DashboardAdmin dashboard
-        +List~LogAudit~ logs
+        +SystèmeAnalytique analytics
+        +PanneauContrôle adminPanel
     }
