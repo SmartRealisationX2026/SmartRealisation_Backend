@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.1",
     "@nestjs/microservices": "^11.1.9",
@@ -42,17 +43,21 @@
     "@nestjs/websockets": "^11.1.9",
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.0.1",
+    "@types/nodemailer": "^7.0.4",
     "@types/pg": "^8.16.0",
+    "@types/speakeasy": "^2.0.10",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "ioredis": "^5.8.2",
+    "nodemailer": "^7.0.11",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "speakeasy": "^2.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

@@ -3,9 +3,14 @@
  * Handles data transformation for existing records
  */
 
-import { PrismaClient } from '../generated/prisma';
+import 'dotenv/config';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
+import { PrismaClient } from '@prisma/client/extension';
 
-const prisma = new PrismaClient();
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function migrateToNewSchema() {
   console.log('🚀 Starting migration to new MLD v2 schema...');
@@ -40,31 +45,37 @@ async function migrateToNewSchema() {
     });
 
     // Create default city for Cameroon
-    const defaultCity = await prisma.city.upsert({
-      where: { nameFr: 'Yaoundé' },
-      update: {},
-      create: {
-        nameFr: 'Yaoundé',
-        nameEn: 'Yaounde',
-        region: 'Centre'
-      }
+    let defaultCity = await prisma.city.findFirst({
+      where: { nameFr: 'Yaoundé' }
     });
+    
+    if (!defaultCity) {
+      defaultCity = await prisma.city.create({
+        data: {
+          nameFr: 'Yaoundé',
+          nameEn: 'Yaounde',
+          region: 'Centre'
+        }
+      });
+    }
 
     // Create default district
-    const defaultDistrict = await prisma.district.upsert({
+    let defaultDistrict = await prisma.district.findFirst({
       where: {
-        cityId_nameFr: {
-          cityId: defaultCity.id,
-          nameFr: 'Centre-ville'
-        }
-      },
-      update: {},
-      create: {
         cityId: defaultCity.id,
-        nameFr: 'Centre-ville',
-        nameEn: 'City Center'
+        nameFr: 'Centre-ville'
       }
     });
+    
+    if (!defaultDistrict) {
+      defaultDistrict = await prisma.district.create({
+        data: {
+          cityId: defaultCity.id,
+          nameFr: 'Centre-ville',
+          nameEn: 'City Center'
+        }
+      });
+    }
 
     // Step 2: Migrate users data
     console.log('👥 Migrating users data...');

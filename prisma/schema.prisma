@@ -3,10 +3,12 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+  //url      = env("DATABASE_URL")
 }
 
 // Enums
@@ -41,23 +43,23 @@ enum ActionType {
 
 // Models
 model User {
-  id             String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
-  email          String     @unique
-  passwordHash   String     @map("password_hash")
-  role           UserRole
-  fullName       String     @map("full_name")
-  phone          String?
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  email             String   @unique
+  passwordHash      String   @map("password_hash")
+  role              UserRole
+  fullName          String   @map("full_name")
+  phone             String?
   preferredLanguage Language @default(FR) @map("preferred_language")
-  createdAt      DateTime   @default(now()) @map("created_at")
-  updatedAt      DateTime   @updatedAt @map("updated_at")
-  isActive       Boolean    @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  isActive          Boolean  @default(true) @map("is_active")
 
   // Relations
-  ownedPharmacies    Pharmacy[]       @relation("Owner")
-  searches           Search[]
-  stockAlerts        StockAlert[]     @relation("UserStockAlerts")
-  systemAuditLogs    SystemAuditLog[]
-  priceHistory       PriceHistory[]   @relation("ChangedBy")
+  ownedPharmacies Pharmacy[]       @relation("Owner")
+  searches        Search[]
+  stockAlerts     StockAlert[]     @relation("UserStockAlerts")
+  systemAuditLogs SystemAuditLog[]
+  priceHistory    PriceHistory[]   @relation("ChangedBy")
 
   // Indexes
   @@index([email])
@@ -66,14 +68,14 @@ model User {
 }
 
 model Address {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
-  cityId     String   @map("city_id") @db.Uuid()
-  districtId String?  @map("district_id") @db.Uuid()
-  streetAddress String @map("street_address")
-  landmark   String?
-  postalCode String?  @map("postal_code")
-  latitude   Decimal  @db.Decimal(10, 8)
-  longitude  Decimal  @db.Decimal(11, 8)
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  cityId        String  @map("city_id") @db.Uuid()
+  districtId    String? @map("district_id") @db.Uuid()
+  streetAddress String  @map("street_address")
+  landmark      String?
+  postalCode    String? @map("postal_code")
+  latitude      Decimal @db.Decimal(10, 8)
+  longitude     Decimal @db.Decimal(11, 8)
 
   // Relations
   city     City      @relation(fields: [cityId], references: [id])
@@ -87,10 +89,10 @@ model Address {
 }
 
 model City {
-  id      String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
-  nameFr  String     @map("name_fr")
-  nameEn  String     @map("name_en")
-  region  String
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  nameFr String @map("name_fr")
+  nameEn String @map("name_en")
+  region String
 
   // Relations
   addresses Address[]
@@ -102,10 +104,10 @@ model City {
 }
 
 model District {
-  id      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
-  cityId  String   @map("city_id") @db.Uuid()
-  nameFr  String   @map("name_fr")
-  nameEn  String   @map("name_en")
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  cityId String @map("city_id") @db.Uuid()
+  nameFr String @map("name_fr")
+  nameEn String @map("name_en")
 
   // Relations
   city      City      @relation(fields: [cityId], references: [id], onDelete: Cascade)
@@ -117,17 +119,17 @@ model District {
 }
 
 model Category {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
-  code        String   @unique
-  nameFr      String   @map("name_fr")
-  nameEn      String   @map("name_en")
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  code        String  @unique
+  nameFr      String  @map("name_fr")
+  nameEn      String  @map("name_en")
   description String?
-  level       Int      @default(1)
-  parentId    String?  @map("parent_id") @db.Uuid()
+  level       Int     @default(1)
+  parentId    String? @map("parent_id") @db.Uuid()
 
   // Relations
-  parent   Category?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children Category[]  @relation("CategoryHierarchy")
+  parent      Category?    @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[]   @relation("CategoryHierarchy")
   medications Medication[]
 
   // Indexes
@@ -137,10 +139,10 @@ model Category {
 }
 
 model MedicationForm {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
-  code        String   @unique
-  nameFr      String   @map("name_fr")
-  nameEn      String   @map("name_en")
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  code        String  @unique
+  nameFr      String  @map("name_fr")
+  nameEn      String  @map("name_en")
   description String?
 
   // Relations
@@ -150,23 +152,23 @@ model MedicationForm {
 }
 
 model Medication {
-  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
-  commercialName    String          @map("commercial_name")
-  dciName           String?         @map("dci_name")
-  categoryId        String          @map("category_id") @db.Uuid()
-  formId            String          @map("form_id") @db.Uuid()
-  dosageStrength    String          @map("dosage_strength")
-  dosageUnit        String          @map("dosage_unit")
-  requiresPrescription Boolean       @default(false) @map("requires_prescription")
-  createdAt         DateTime        @default(now()) @map("created_at")
-  updatedAt         DateTime        @updatedAt @map("updated_at")
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  commercialName       String   @map("commercial_name")
+  dciName              String?  @map("dci_name")
+  categoryId           String   @map("category_id") @db.Uuid()
+  formId               String   @map("form_id") @db.Uuid()
+  dosageStrength       String   @map("dosage_strength")
+  dosageUnit           String   @map("dosage_unit")
+  requiresPrescription Boolean  @default(false) @map("requires_prescription")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
 
   // Relations
-  category     Category       @relation(fields: [categoryId], references: [id])
-  form         MedicationForm @relation(fields: [formId], references: [id])
+  category       Category        @relation(fields: [categoryId], references: [id])
+  form           MedicationForm  @relation(fields: [formId], references: [id])
   inventoryItems InventoryItem[]
-  searches     Search[]
-  stockAlerts  StockAlert[]
+  searches       Search[]
+  stockAlerts    StockAlert[]
 
   // Indexes
   @@index([commercialName])
@@ -176,27 +178,27 @@ model Medication {
 }
 
 model Pharmacy {
-  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
-  name              String
-  addressId         String      @unique @map("address_id") @db.Uuid()
-  licenseNumber     String?     @map("license_number")
-  phone             String?
-  emergencyPhone    String?     @map("emergency_phone")
-  is24_7            Boolean     @default(false) @map("is_24_7")
-  openingTime       DateTime?   @map("opening_time") @db.Time
-  closingTime       DateTime?   @map("closing_time") @db.Time
-  workingDays       Json        @map("working_days") // [1,2,3,4,5,6,7]
-  ownerId           String      @map("owner_id") @db.Uuid()
-  isVerified        Boolean     @default(false) @map("is_verified")
-  verifiedAt        DateTime?   @map("verified_at")
-  createdAt         DateTime    @default(now()) @map("created_at")
-  updatedAt         DateTime    @updatedAt @map("updated_at")
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  name           String
+  addressId      String    @unique @map("address_id") @db.Uuid()
+  licenseNumber  String?   @map("license_number")
+  phone          String?
+  emergencyPhone String?   @map("emergency_phone")
+  is24_7         Boolean   @default(false) @map("is_24_7")
+  openingTime    DateTime? @map("opening_time") @db.Time
+  closingTime    DateTime? @map("closing_time") @db.Time
+  workingDays    Json      @map("working_days") // [1,2,3,4,5,6,7]
+  ownerId        String    @map("owner_id") @db.Uuid()
+  isVerified     Boolean   @default(false) @map("is_verified")
+  verifiedAt     DateTime? @map("verified_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  address      Address         @relation(fields: [addressId], references: [id])
-  owner        User            @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  address        Address         @relation(fields: [addressId], references: [id])
+  owner          User            @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
   inventoryItems InventoryItem[]
-  stockAlerts  StockAlert[]
+  stockAlerts    StockAlert[]
 
   // Indexes
   @@index([addressId])
@@ -206,21 +208,21 @@ model Pharmacy {
 }
 
 model InventoryItem {
-  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
-  pharmacyId       String      @map("pharmacy_id") @db.Uuid()
-  medicationId     String      @map("medication_id") @db.Uuid()
-  batchNumber      String      @map("batch_number")
-  expirationDate   DateTime    @map("expiration_date") @db.Date
-  quantityInStock  Int         @map("quantity_in_stock")
-  unitPriceFcfa    Decimal     @map("unit_price_fcfa") @db.Decimal(10, 2)
-  sellingPriceFcfa Decimal     @map("selling_price_fcfa") @db.Decimal(10, 2)
-  isAvailable      Boolean     @default(true) @map("is_available")
-  lastRestocked    DateTime?   @map("last_restocked")
-  updatedAt        DateTime    @updatedAt @map("updated_at")
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  pharmacyId       String    @map("pharmacy_id") @db.Uuid()
+  medicationId     String    @map("medication_id") @db.Uuid()
+  batchNumber      String    @map("batch_number")
+  expirationDate   DateTime  @map("expiration_date") @db.Date
+  quantityInStock  Int       @map("quantity_in_stock")
+  unitPriceFcfa    Decimal   @map("unit_price_fcfa") @db.Decimal(10, 2)
+  sellingPriceFcfa Decimal   @map("selling_price_fcfa") @db.Decimal(10, 2)
+  isAvailable      Boolean   @default(true) @map("is_available")
+  lastRestocked    DateTime? @map("last_restocked")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  pharmacy   Pharmacy     @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
-  medication Medication   @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  pharmacy     Pharmacy       @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  medication   Medication     @relation(fields: [medicationId], references: [id], onDelete: Cascade)
   priceHistory PriceHistory[]
 
   // Constraints
@@ -274,21 +276,21 @@ model PriceHistory {
 }
 
 model StockAlert {
-  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
-  userId             String?            @map("user_id") @db.Uuid()
-  medicationId       String             @map("medication_id") @db.Uuid()
-  pharmacyId         String?            @map("pharmacy_id") @db.Uuid()
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid()
+  userId              String?             @map("user_id") @db.Uuid()
+  medicationId        String              @map("medication_id") @db.Uuid()
+  pharmacyId          String?             @map("pharmacy_id") @db.Uuid()
   notificationChannel NotificationChannel @map("notification_channel")
-  contactInfo        String             @map("contact_info")
-  status             AlertStatus        @default(ACTIVE)
-  createdAt          DateTime           @default(now()) @map("created_at")
-  triggeredAt        DateTime?          @map("triggered_at")
-  expiresAt          DateTime?          @map("expires_at")
+  contactInfo         String              @map("contact_info")
+  status              AlertStatus         @default(ACTIVE)
+  createdAt           DateTime            @default(now()) @map("created_at")
+  triggeredAt         DateTime?           @map("triggered_at")
+  expiresAt           DateTime?           @map("expires_at")
 
   // Relations
-  user       User?       @relation("UserStockAlerts", fields: [userId], references: [id], onDelete: SetNull)
-  medication Medication  @relation(fields: [medicationId], references: [id], onDelete: Cascade)
-  pharmacy   Pharmacy?   @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
+  user       User?      @relation("UserStockAlerts", fields: [userId], references: [id], onDelete: SetNull)
+  medication Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  pharmacy   Pharmacy?  @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
 
   @@map("stock_alerts")
 }

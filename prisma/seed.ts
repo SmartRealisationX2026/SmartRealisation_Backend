@@ -1,9 +1,9 @@
 import 'dotenv/config'
 import * as bcrypt from 'bcrypt'
-import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 import { faker } from '@faker-js/faker'
+import { PrismaClient } from '@prisma/client';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 const adapter = new PrismaPg(pool)
@@ -171,9 +171,13 @@ async function main() {
     const pharmacies: any[] = []
     for (const pharmacist of pharmacists) {
       const city = faker.helpers.arrayElement(cities)
-      const district = faker.helpers.arrayElement(await prisma.district.findMany({
+      const districts = await prisma.district.findMany({
         where: { cityId: city.id }
-      }))
+      })
+      if (districts.length === 0) {
+        throw new Error(`No districts found for city ${city.id}`)
+      }
+      const district = faker.helpers.arrayElement(districts)
 
       // Create address
       const address = await prisma.address.create({
@@ -342,7 +346,8 @@ async function main() {
     console.log('💰 Creating price history...')
 
     const inventoryItems = await prisma.inventoryItem.findMany()
-    for (const item of faker.helpers.arrayElements(inventoryItems, 50)) {
+    const selectedItems = faker.helpers.arrayElements(inventoryItems, Math.min(50, inventoryItems.length))
+    for (const item of selectedItems) {
       await prisma.priceHistory.create({
         data: {
           inventoryItemId: item.id,
