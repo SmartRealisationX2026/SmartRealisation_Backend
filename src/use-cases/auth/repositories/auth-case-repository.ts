@@ -75,7 +75,7 @@ export class AuthCaseRepository implements AuthRepository {
     });
     
     console.log(`OTP for ${userDto.email}: ${otp}`);
-    //await this.nodemailerService.sendSignupConfirmation(userDto.email, otp);
+    await this.nodemailerService.sendSignupConfirmation(userDto.email, otp);
   }
 
   async verifyauth(otp: string, id: string): Promise<User | null> {

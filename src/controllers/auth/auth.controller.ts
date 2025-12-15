@@ -3,7 +3,7 @@ import { CreateUserDto } from '../../core/dtos';
 import { User } from '../../core/entities';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthRepository } from '../../core/repositories/auth-repository';
-import { apiBodySwagger_login, apiBodySwagger_verifyAuth } from './apiBody/apiBody.swagger';
+import { apiBodySwagger_login, apiBodySwagger_verifyAuth, apiBodySwagger_register } from './apiBody/apiBody.swagger';
 import { AuthCaseService } from '../../use-cases/auth/auth.service';
 
 @ApiTags('Authentification')
@@ -30,6 +30,7 @@ export class AuthController implements AuthRepository {
   @ApiOperation({ summary: 'Inscription utilisateur' })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'Utilisateur créé avec succès' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Données invalides' })
+  @ApiBody(apiBodySwagger_register)
   async register(@Body() user: CreateUserDto): Promise<void> {
     return await this.authService.register(user);
   }

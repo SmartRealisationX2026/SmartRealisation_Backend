@@ -6,4 +6,6 @@ import { MailerService } from './mailer.service';
   providers: [MailerService],
   exports: [MailerService],
 })
-export class MailerModule {}
+export class MailerModule {
+  // ConfigService est déjà global grâce à ConfigModule.forRoot({ isGlobal: true })
+}
