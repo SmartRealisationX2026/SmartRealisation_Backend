@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { UserUseCasesModule } from './use-cases/user/user.module';
 import { AuthCaseModule } from './use-cases/auth/auth.module';
 import { MailerModule } from './frameworks/mailer/mailer.module';
+import { RedisModule } from './frameworks/cache/redis.module';
 import { PrismaModule } from './frameworks/data-services/prisma/prisma.module';
 import { PharmacyModule } from './use-cases/pharmacy/pharmacy.module';
 import { MedicationModule } from './use-cases/medication/medication.module';
@@ -53,6 +54,7 @@ import { SystemAuditLogController } from './controllers/system-audit-log/system-
 
     // Modules métier
     MailerModule,
+    RedisModule,
     UserUseCasesModule,
     AuthCaseModule,
     PharmacyModule,

@@ -37,7 +37,7 @@ La base de données SmartRealisation utilise PostgreSQL avec Prisma 7 comme ORM.
 ## 🚀 Installation & Configuration
 
 ### Prérequis
-- PostgreSQL installé localement
+- PostgreSQL installé localement avec extensions PostGIS et pg_trgm
 - Node.js et npm installés
 - Dépendances du projet installées (`npm install`)
 
@@ -68,6 +68,46 @@ La base de données SmartRealisation utilise PostgreSQL avec Prisma 7 comme ORM.
    ```bash
    npm run db:seed
    ```
+
+#### Installation des extensions PostgreSQL
+
+Ce projet nécessite les extensions PostgreSQL suivantes pour les fonctionnalités avancées :
+
+- **PostGIS** : Pour les recherches géographiques et les calculs de distance
+- **pg_trgm** : Pour la recherche floue (fuzzy search) sur les noms de médicaments
+
+##### Méthode 1 : Via Stack Builder (Recommandé)
+1. Ouvrir **Stack Builder** depuis PostgreSQL :
+   - `Start → PostgreSQL 17 → Application Stack Builder`
+   - Sélectionner votre installation PostgreSQL
+   - Aller dans "Spatial Extensions"
+   - Cocher "PostGIS 3.5 for PostgreSQL 17"
+   - Installer
+
+##### Méthode 2 : Installation manuelle via psql
+Si Stack Builder ne fonctionne pas, installer manuellement :
+
+```bash
+# Se connecter à PostgreSQL
+psql -U postgres -d medilink_db
+
+# Créer les extensions
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+# Vérifier l'installation
+SELECT postgis_full_version();
+\dx  # Lister les extensions installées
+```
+
+##### Vérification
+```bash
+# Tester PostGIS
+psql -U postgres -d medilink_db -c "SELECT postgis_full_version();"
+
+# Tester pg_trgm
+psql -U postgres -d medilink_db -c "SELECT 'hello' % 'helo';"
+```
 
 ## 📊 Scripts disponibles
 
@@ -314,7 +354,6 @@ Pour ajouter/modifier le schéma :
 - **Index sur colonnes fréquentes** (email, rôle, dates, coordonnées)
 - **Batch processing** dans les seeds pour optimisation
 - **Relations optimisées** avec clés étrangères appropriées
-+++++++ REPLACE</parameter>
 
 ## 🐛 Dépannage
 
@@ -327,11 +366,38 @@ pg_isready -h localhost -p 5432
 psql -U medilink_user -d medilink_db -c "SELECT version();"
 ```
 
-### Erreur de migration
+### Erreur de migration "extension postgis is not available"
+**Cause** : PostGIS n'est pas installé sur PostgreSQL
+**Solution** :
+1. Installer PostGIS via Stack Builder ou manuellement (voir section Installation des extensions)
+2. Redémarrer PostgreSQL si nécessaire
+3. Réessayer la migration
+
+### Erreur "Drift detected" / "Schema drift"
+**Cause** : Le schéma de la base ne correspond pas à l'historique des migrations Prisma
+**Solutions** :
 ```bash
-# Reset et re-migration
-npm run db:reset
-npm run db:migrate
+# Option 1: Reset complet (recommandé pour développement)
+npx prisma migrate reset
+
+# Option 2: Marquer le schéma actuel comme baseline (conserve les données)
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > baseline.sql
+npx prisma db execute --file baseline.sql
+npx prisma migrate resolve --applied [migration_name]
+```
+
+### Erreur Prisma Accelerate / Hosted database
+**Cause** : Utilisation de Prisma Accelerate qui ne supporte pas certaines extensions
+**Solution** : Basculer vers PostgreSQL local avec PostGIS installé
+
+### Extensions non trouvées après installation
+```bash
+# Vérifier les extensions disponibles
+psql -U postgres -d medilink_db -c "\dx"
+
+# Créer manuellement si nécessaire
+psql -U postgres -d medilink_db -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+psql -U postgres -d medilink_db -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
 ```
 
 ### Problème de seeds
@@ -341,3 +407,31 @@ npx tsc --noEmit prisma/seed.ts
 
 # Lancer manuellement
 npm run db:seed
+```
+
+### Vérification complète du setup
+```bash
+# 1. Vérifier PostgreSQL
+pg_isready -h localhost -p 5432
+
+# 2. Tester connexion
+psql -U medilink_user -d medilink_db -c "SELECT version();"
+
+# 3. Vérifier extensions
+psql -U medilink_user -d medilink_db -c "SELECT name FROM pg_available_extensions WHERE name IN ('postgis', 'pg_trgm');"
+
+# 4. Tester PostGIS
+psql -U medilink_user -d medilink_db -c "SELECT postgis_full_version();"
+
+# 5. Tester pg_trgm
+psql -U medilink_user -d medilink_db -c "SELECT 'hello' % 'helo';"
+
+# 6. Générer client Prisma
+npm run db:generate
+
+# 7. Tester migration
+npx prisma migrate dev --create-only
+
+# 8. Tester seeds
+npm run db:seed
+```

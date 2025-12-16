@@ -101,7 +101,7 @@ export class AuthCaseRepository implements AuthRepository {
     }
 
     // Générer le token JWT
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email, role: user.role };
     const access_token = this.jwtService.sign(
       payload,
       {
