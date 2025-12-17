@@ -36,6 +36,7 @@ import { SystemAuditLogController } from './controllers/system-audit-log/system-
 import { AdminPharmacyController } from './controllers/admin/pharmacy/admin-pharmacy.controller';
 import { PharmacistAnalyticsController } from './controllers/pharmacist-analytics/pharmacist-analytics/pharmacist-analytics.controller';
 import { PharmacistAnalyticsModule } from './use-cases/pharmacist-analytics/pharmacist-analytics.module';
+import { SocketModule } from './frameworks/socket/socket.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { PharmacistAnalyticsModule } from './use-cases/pharmacist-analytics/phar
     AdminAnalyticsModule,
     SystemAuditLogModule,
     PharmacistAnalyticsModule,
+    SocketModule,
   ],
   controllers: [PharmacyController, MedicationController, CategoryController, MedicationFormController, InventoryItemController, SearchController, StockAlertController, PriceHistoryController, AddressController, CityController, DistrictController, AdminAnalyticsController, SystemAuditLogController, AdminPharmacyController, PharmacistAnalyticsController],
 })

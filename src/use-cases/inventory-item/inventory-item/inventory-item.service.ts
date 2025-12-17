@@ -2,9 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateInventoryItemDto, UpdateInventoryItemDto } from '../../../core/dtos/request/inventory-item.dto';
 import { PrismaService } from '../../../frameworks/data-services/prisma/prisma.service';
 
+import { StockUpdateGateway } from '../../../frameworks/socket/stock-update.gateway';
+
 @Injectable()
 export class InventoryItemService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private stockGateway: StockUpdateGateway
+    ) { }
 
     async create(createInventoryItemDto: CreateInventoryItemDto) {
         // Check if item already exists for this pharmacy/medication/batch
@@ -20,21 +25,25 @@ export class InventoryItemService {
 
         if (existing) {
             // Update quantity if exists
-            return this.prisma.inventoryItem.update({
+            const updated = await this.prisma.inventoryItem.update({
                 where: { id: existing.id },
                 data: {
                     quantityInStock: existing.quantityInStock + createInventoryItemDto.quantityInStock,
                     lastRestocked: new Date()
                 }
             });
+            this.stockGateway.broadcastStockUpdate(updated.pharmacyId, updated.medicationId, updated.quantityInStock);
+            return updated;
         }
 
-        return this.prisma.inventoryItem.create({
+        const created = await this.prisma.inventoryItem.create({
             data: {
                 ...createInventoryItemDto,
                 lastRestocked: createInventoryItemDto.lastRestocked || new Date(),
             },
         });
+        this.stockGateway.broadcastStockUpdate(created.pharmacyId, created.medicationId, created.quantityInStock);
+        return created;
     }
 
     findAll(pharmacyId?: string) {
@@ -60,10 +69,14 @@ export class InventoryItemService {
 
     async update(id: string, updateInventoryItemDto: UpdateInventoryItemDto) {
         await this.findOne(id); // Ensure exists
-        return this.prisma.inventoryItem.update({
+        const updated = await this.prisma.inventoryItem.update({
             where: { id },
             data: updateInventoryItemDto,
         });
+        if (updated.quantityInStock !== undefined) {
+            this.stockGateway.broadcastStockUpdate(updated.pharmacyId, updated.medicationId, updated.quantityInStock);
+        }
+        return updated;
     }
 
     async remove(id: string) {
