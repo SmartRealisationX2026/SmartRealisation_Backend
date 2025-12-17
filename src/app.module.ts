@@ -33,6 +33,7 @@ import { CityController } from './controllers/city/city/city.controller';
 import { DistrictController } from './controllers/district/district/district.controller';
 import { AdminAnalyticsController } from './controllers/admin-analytics/admin-analytics/admin-analytics.controller';
 import { SystemAuditLogController } from './controllers/system-audit-log/system-audit-log/system-audit-log.controller';
+import { AdminPharmacyController } from './controllers/admin/pharmacy/admin-pharmacy.controller';
 
 @Module({
   imports: [
@@ -71,6 +72,6 @@ import { SystemAuditLogController } from './controllers/system-audit-log/system-
     AdminAnalyticsModule,
     SystemAuditLogModule,
   ],
-  controllers: [PharmacyController, MedicationController, CategoryController, MedicationFormController, InventoryItemController, SearchController, StockAlertController, PriceHistoryController, AddressController, CityController, DistrictController, AdminAnalyticsController, SystemAuditLogController],
+  controllers: [PharmacyController, MedicationController, CategoryController, MedicationFormController, InventoryItemController, SearchController, StockAlertController, PriceHistoryController, AddressController, CityController, DistrictController, AdminAnalyticsController, SystemAuditLogController, AdminPharmacyController],
 })
-export class AppModule {}
+export class AppModule { }

@@ -17,19 +17,19 @@ export class PharmacyService {
 
     findAll() {
         return this.prisma.pharmacy.findMany({
-            include: { address: {
-              include :{ city : true , district : true}
-              }, owner: true }
+            include: {
+                address: {
+                    include: { city: true, district: true }
+                }, owner: true
+            }
         });
     }
 
     async findOne(id: string) {
-      console.log(id);
         const pharmacy = await this.prisma.pharmacy.findUnique({
             where: { id },
-            include: { address: {include :{ city : true , district : true}}, owner: true, inventoryItems: true }
+            include: { address: { include: { city: true, district: true } }, owner: true, inventoryItems: { include: { medication: true } } }
         });
-        console.log(pharmacy);
         if (!pharmacy) throw new NotFoundException(`Pharmacy with ID ${id} not found`);
         return pharmacy;
     }
@@ -46,6 +46,26 @@ export class PharmacyService {
         await this.findOne(id);
         return this.prisma.pharmacy.delete({
             where: { id },
+        });
+    }
+
+    // ADMIN METHODS
+    async findPending() {
+        return this.prisma.pharmacy.findMany({
+            where: { isVerified: false },
+            include: { address: true, owner: true }
+        });
+    }
+
+    async verify(id: string, isVerified: boolean) {
+        await this.findOne(id);
+        const data: any = { isVerified };
+        if (isVerified) {
+            data.verifiedAt = new Date();
+        }
+        return this.prisma.pharmacy.update({
+            where: { id },
+            data
         });
     }
 }

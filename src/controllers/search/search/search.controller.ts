@@ -1,50 +1,29 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, IsUUID, Max, Min, MinLength } from 'class-validator';
-import { Type } from 'class-transformer';
-import { SearchService } from 'src/use-cases/search/search/search.service';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { SearchService } from '../../../use-cases/search/search/search.service';
+import { SearchFilterDto } from '../../../core/dtos/request/search-filter.dto';
 
-class PharmacySearchQueryDto {
-  @IsString()
-  @MinLength(2)
-  medication: string;
-
-  @Type(() => Number)
-  @IsNumber()
-  latitude: number;
-
-  @Type(() => Number)
-  @IsNumber()
-  longitude: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1)
-  @Max(50)
-  radiusKm?: number = 10;
-}
-
-@ApiTags('Search')
-@Controller('api/pharmacies')
+@ApiTags('Patient Search')
+@Controller('search')
 export class SearchController {
-  constructor(private readonly searchService: SearchService) {}
+  constructor(private readonly searchService: SearchService) { }
 
-  @Get('search')
-  @ApiOperation({ summary: 'Find pharmacies with medication and distance' })
-  @ApiQuery({ name: 'medication', required: true, description: 'Medication name (minimum 2 characters)' })
-  @ApiQuery({ name: 'latitude', required: true, type: Number })
-  @ApiQuery({ name: 'longitude', required: true, type: Number })
-  @ApiQuery({ name: 'radiusKm', required: false, type: Number, description: 'Search radius in km (1-50)' })
-  @ApiResponse({ status: 200, description: 'Pharmacies with stock sorted by distance' })
-  async search(@Query() query: PharmacySearchQueryDto) {
-    const { medication, latitude, longitude, radiusKm = 10 } = query;
-    const pharmacies = await this.searchService.searchPharmacies({
-      medication,
-      latitude,
-      longitude,
-      radiusKm,
-    });
-    return { pharmacies };
+  @Get()
+  @ApiOperation({
+    summary: 'Search for medications in nearby pharmacies',
+    description: 'Returns a list of pharmacies having the stock, ordered by distance. Filters available: Open Now, Max Price, Radius.'
+  })
+  @ApiResponse({ status: 200, description: 'List of matching inventory items with distance.' })
+  async search(@Query() filters: SearchFilterDto) {
+    return this.searchService.searchPharmacies(filters);
+  }
+
+  @Get('nearby')
+  @ApiOperation({
+    summary: 'Find pharmacies near a location',
+    description: 'Returns all verified pharmacies within RADIUS (default 10km) sorted by distance.'
+  })
+  async findNearby(@Query() filters: SearchFilterDto) {
+    return this.searchService.getNearbyPharmacies(filters);
   }
 }
