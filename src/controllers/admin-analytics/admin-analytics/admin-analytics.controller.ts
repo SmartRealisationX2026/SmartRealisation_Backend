@@ -1,4 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AdminAnalyticsService } from '../../../use-cases/admin-analytics/admin-analytics/admin-analytics.service';
 
@@ -30,5 +31,22 @@ export class AdminAnalyticsController {
     })
     getDashboardData() {
         return this.analyticsService.getDashboardData();
+    }
+
+    @Get('trends')
+    @ApiOperation({ summary: 'Get advanced global trends (Top Meds, Cities)' })
+    @ApiResponse({ status: 200, description: 'Global insights retrieved.' })
+    getTrends() {
+        return this.analyticsService.getGlobalTrends();
+    }
+
+    @Get('export/:entity')
+    @ApiOperation({ summary: 'Export data to CSV' })
+    @ApiResponse({ status: 200, description: 'CSV file download.' })
+    async exportData(@Param('entity') entity: 'users' | 'pharmacies', @Res() res: Response) {
+        const csv = await this.analyticsService.exportData(entity);
+        res.header('Content-Type', 'text/csv');
+        res.header('Content-Disposition', `attachment; filename=${entity}_export_${Date.now()}.csv`);
+        res.send(csv);
     }
 }

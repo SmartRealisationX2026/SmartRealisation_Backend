@@ -283,6 +283,12 @@ curl -X GET "http://localhost:3000/api/admin-analytics/dashboard" \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
+#### UC2c: Tendances Globales ✅ [LIVE]
+```bash
+curl -X GET "http://localhost:3000/api/admin-analytics/trends" \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
 #### UC2b: Logs Système 🛠️ [SPEC]
 ```bash
 curl -X GET "http://localhost:3000/api/admin/logs?limit=50" \
@@ -297,9 +303,9 @@ curl -X POST "http://localhost:3000/api/admin/medications/import" \
   -F "file=@/path/to/med_db.json"
 ```
 
-#### UC3a: Exporter Données 🛠️ [SPEC]
+#### UC3a: Exporter Données (CSV) ✅ [LIVE]
 ```bash
-curl -X GET "http://localhost:3000/api/admin/export/users" \
+curl -X GET "http://localhost:3000/api/admin-analytics/export/users" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   --output users_backup.csv
 ```
