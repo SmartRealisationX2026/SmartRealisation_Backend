@@ -20,7 +20,7 @@ export class PharmacyService {
             include: {
                 address: {
                     include: { city: true, district: true }
-                }, owner: true
+                }, owner: true, inventoryItems: { include: { medication: true } }
             }
         });
     }

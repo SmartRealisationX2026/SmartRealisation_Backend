@@ -48,7 +48,6 @@ export class SearchService {
     // 2. Post-Process: Calculate Distance & Availability
     const now = new Date();
     const currentDay = now.getDay(); // 0 = Sunday
-    // Note: isOpen logic is simplified for MVP (check workingDays)
 
     const mappedResults = inventoryItems.map(item => {
       const lat = Number(item.pharmacy.address.latitude);
@@ -71,11 +70,8 @@ export class SearchService {
         isOpenCalculated = true;
       } else {
         const workingDays = item.pharmacy.workingDays as unknown as number[];
-        // Map JS 0 -> 7
         const todayPrisma = currentDay === 0 ? 7 : currentDay;
-
         if (Array.isArray(workingDays) && workingDays.includes(todayPrisma)) {
-          // Basic day check
           isOpenCalculated = true;
         }
       }
@@ -97,45 +93,10 @@ export class SearchService {
     // 4. Sort by Distance
     finalResults.sort((a, b) => a.distanceKm - b.distanceKm);
 
-    // 5. ASYNC LOGGING (Fire & Forget for performance)
+    // 5. ASYNC LOGGING
     this.logSearch(filters, finalResults.length).catch(err => console.error('Search Log Error:', err));
 
     return finalResults;
-  }
-
-  private async logSearch(filters: SearchFilterDto, resultsCount: number) {
-    // Basic logging. In prod, use a Queue (Bull/Redis).
-    // Here we log to DB directly.
-    try {
-      if (!filters.term && !filters.medicationId) return; // Don't log empty nearby browsing? Or do? 
-      // Let's log if there is intent.
-
-      // If medicationId is provided, we need to ensure it checks out or just log it.
-      // The Search Entity in Schema requires medicationId? let's check schema.
-      // Schema: medicationId String @map("medication_id") @db.Uuid() -> It is REQUIRED relation.
-      // If we search by TERM only, we might not have a medicationId immediately unless we exact match a med.
-      // IF search is by TERM, we can't easily insert into `Search` table if it demands a valid `medicationId`.
-      // Schema check: `medicationId` is Reference to `Medication`.
-      // Issue: Simple text search might not map to one ID.
-      // Solution for MVP: Only log if `medicationId` is present (Auto-complete selected) OR find best match.
-      // If term is used, we might skip logging detailed relational search or find the first match.
-
-      if (filters.medicationId) {
-        await this.prisma.search.create({
-          data: {
-            medicationId: filters.medicationId,
-            latitude: filters.userLat,
-            longitude: filters.userLng,
-            radiusKm: filters.radiusKm || 10,
-            filtersApplied: JSON.parse(JSON.stringify(filters)) as any,
-            resultsFound: resultsCount
-            // userId: can be extracted if we passed User context. For now anonymous.
-          }
-        });
-      }
-    } catch (e) {
-      // Ignore log errors to not block search
-    }
   }
 
   async getNearbyPharmacies(filters: SearchFilterDto) {
@@ -173,5 +134,24 @@ export class SearchService {
     results.sort((a, b) => a.distanceKm - b.distanceKm);
 
     return results;
+  }
+
+  private async logSearch(filters: SearchFilterDto, resultsCount: number) {
+    try {
+      if (!filters.medicationId) return;
+
+      await this.prisma.search.create({
+        data: {
+          medicationId: filters.medicationId,
+          latitude: filters.userLat,
+          longitude: filters.userLng,
+          radiusKm: filters.radiusKm || 10,
+          filtersApplied: JSON.parse(JSON.stringify(filters)) as any,
+          resultsFound: resultsCount
+        }
+      });
+    } catch (e) {
+      // Silent fail
+    }
   }
 }
