@@ -17,7 +17,14 @@ export class PharmacyController {
     constructor(private readonly pharmacyService: PharmacyService) { }
 
     @Post()
-    @ApiOperation({ summary: 'Register a new pharmacy' })
+    @ApiOperation({
+        summary: 'Register a new pharmacy',
+        description: `
+        **UC1a: Pharmacy Registration**
+        - Initial creation of the Pharmacy profile.
+        - **Note**: Created with 'isVerified: false'. Needs Admin approval (UC1b) to be visible in Search.
+        `
+    })
     @ApiResponse({ status: 201, description: 'The pharmacy has been successfully created.', type: CreatePharmacyDto })
     @ApiResponse({ status: 400, description: 'Invalid input data.' })
     @ApiBody({
@@ -42,21 +49,56 @@ export class PharmacyController {
 
     @Get()
     @ApiOperation({ summary: 'List all pharmacies' })
-    @ApiResponse({ status: 200, description: 'List of pharmacies.' })
+    @ApiResponse({
+        status: 200,
+        description: 'List of pharmacies.',
+        schema: {
+            example: [
+                {
+                    "id": "pharma-uuid-1",
+                    "name": "Pharmacie du Soleil",
+                    "is24_7": true,
+                    "phone": "+237699000000",
+                    "address": { "city": { "nameFr": "Douala" } }
+                }
+            ]
+        }
+    })
     findAll() {
         return this.pharmacyService.findAll();
     }
 
     @Get(':id')
     @ApiOperation({ summary: 'Get pharmacy details' })
-    @ApiResponse({ status: 200, description: 'Pharmacy details including address and owner.' })
+    @ApiResponse({
+        status: 200,
+        description: 'Pharmacy details including address and owner.',
+        schema: {
+            example: {
+                "id": "pharma-uuid-1",
+                "name": "Pharmacie du Soleil",
+                "openingTime": "08:00:00",
+                "closingTime": "20:00:00",
+                "isVerified": true,
+                "owner": { "email": "pharmacist@medilink.cm" },
+                "address": { "street": "Avenue Kennedy", "city": { "nameFr": "Yaoundé" } }
+            }
+        }
+    })
     @ApiResponse({ status: 404, description: 'Pharmacy not found.' })
     findOne(@Param('id') id: string) {
         return this.pharmacyService.findOne(id);
     }
 
     @Patch(':id')
-    @ApiOperation({ summary: 'Update pharmacy details' })
+    @ApiOperation({
+        summary: 'Update pharmacy details',
+        description: `
+        **UC4: Manage Pharmacy Profile**
+        - Pharmacist updates contacts, opening hours, or address.
+        - Changes are reflected immediately in Patient Search.
+        `
+    })
     @ApiResponse({ status: 200, description: 'Pharmacy updated successfully.' })
     @ApiResponse({ status: 404, description: 'Pharmacy not found.' })
     update(

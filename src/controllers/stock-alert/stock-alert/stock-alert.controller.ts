@@ -19,7 +19,14 @@ export class StockAlertController {
     constructor(private readonly stockAlertService: StockAlertService) { }
 
     @Post()
-    @ApiOperation({ summary: 'Subscribe to a stock alert' })
+    @ApiOperation({
+        summary: 'Subscribe to a stock alert',
+        description: `
+        **UC_StockAlert: Notify Me**
+        - Patient subscribes to receive a notification when a medication is back in stock.
+        - Triggered via WebSockets or Email (MVP supports Email placeholder).
+        `
+    })
     @ApiResponse({ status: 201, description: 'Alert subscription created successfully.', type: CreateStockAlertDto })
     @ApiResponse({ status: 400, description: 'Invalid input data.' })
     @ApiBody({
@@ -44,7 +51,22 @@ export class StockAlertController {
 
     @Get()
     @ApiOperation({ summary: 'List all stock alerts (optionally filtered by User)' })
-    @ApiResponse({ status: 200, description: 'List of alerts.' })
+    @ApiResponse({
+        status: 200,
+        description: 'List of alerts.',
+        schema: {
+            example: [
+                {
+                    "id": "alert-uuid-1",
+                    "userId": "user-uuid",
+                    "medicationId": "med-uuid",
+                    "status": "ACTIVE",
+                    "notificationChannel": "EMAIL",
+                    "medication": { "commercialName": "Efferalgan" }
+                }
+            ]
+        }
+    })
     @ApiQuery({ name: 'userId', required: false, description: 'Filter alerts by User ID' })
     findAll(@Query('userId') userId?: string) {
         return this.stockAlertService.findAll(userId);
@@ -52,7 +74,21 @@ export class StockAlertController {
 
     @Get(':id')
     @ApiOperation({ summary: 'Get alert details' })
-    @ApiResponse({ status: 200, description: 'Alert details.' })
+    @ApiResponse({
+        status: 200,
+        description: 'Alert details.',
+        schema: {
+            example: {
+                "id": "alert-uuid-1",
+                "status": "ACTIVE",
+                "notificationChannel": "EMAIL",
+                "contactInfo": "user@example.com",
+                "createdAt": "2025-01-01T12:00:00.000Z",
+                "medication": { "commercialName": "Doliprane" },
+                "pharmacy": { "name": "Pharmacie du Centre" }
+            }
+        }
+    })
     @ApiResponse({ status: 404, description: 'Alert not found.' })
     findOne(@Param('id') id: string) {
         return this.stockAlertService.findOne(id);
