@@ -1,10 +1,10 @@
 import { Body, Controller, Post, Put, HttpCode, HttpStatus, ValidationPipe } from '@nestjs/common';
-import { CreateUserDto } from '../../core/dtos';
+import { CreateUserDto, LoginResponseDto } from '../../core/dtos';
 import { User } from '../../core/entities';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { AuthRepository } from '../../core/repositories/auth-repository';
 import { apiBodySwagger_login, apiBodySwagger_verifyAuth, apiBodySwagger_register } from './apiBody/apiBody.swagger';
 import { AuthCaseService } from '../../use-cases/auth/auth.service';
+import { AuthRepository } from '../../core/repositories';
 
 @ApiTags('Authentification')
 @Controller('api/auth')
@@ -14,14 +14,14 @@ export class AuthController implements AuthRepository {
   @Post('/login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Connexion utilisateur' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Utilisateur connecté avec succès' , type: User})
+  @ApiResponse({ status: HttpStatus.OK, description: 'Utilisateur connecté avec succès' , type: LoginResponseDto})
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Identifiants invalides' })
   @ApiBody(apiBodySwagger_login)
 
   async login(
     @Body('email') email: string,
     @Body('password') password: string,
-  ): Promise<{access_token: string, user: User} | null> {
+  ): Promise<LoginResponseDto | null> {
     return await this.authService.login(email, password);
   }
 

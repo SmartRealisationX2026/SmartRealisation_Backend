@@ -17,15 +17,19 @@ export class PharmacyService {
 
     findAll() {
         return this.prisma.pharmacy.findMany({
-            include: { address: true, owner: true }
+            include: { address: {
+              include :{ city : true , district : true}
+              }, owner: true }
         });
     }
 
     async findOne(id: string) {
+      console.log(id);
         const pharmacy = await this.prisma.pharmacy.findUnique({
             where: { id },
-            include: { address: true, owner: true, inventoryItems: true }
+            include: { address: {include :{ city : true , district : true}}, owner: true, inventoryItems: true }
         });
+        console.log(pharmacy);
         if (!pharmacy) throw new NotFoundException(`Pharmacy with ID ${id} not found`);
         return pharmacy;
     }

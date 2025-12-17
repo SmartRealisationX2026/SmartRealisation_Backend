@@ -1,7 +1,7 @@
 import { PrismaService } from '../../../frameworks/data-services/prisma/prisma.service';
 import { User } from '../../../core/entities';
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { CreateUserDto } from '../../../core/dtos';
+import { CreateUserDto, LoginResponseDto } from '../../../core/dtos';
 import * as bcrypt from 'bcrypt';
 import * as speakeasy from "speakeasy";
 import { ConfigService } from '@nestjs/config';
@@ -18,7 +18,7 @@ export class AuthCaseRepository implements AuthRepository {
     private readonly jwtService : JwtService,
   ) {}
 
-  async login(email: string, password: string): Promise<{access_token: string, user: User} | null> {
+  async login(email: string, password: string): Promise<LoginResponseDto | null> {
     const user = await this.prismaService.user.findUnique({
       where: { email }
     });
@@ -36,22 +36,13 @@ export class AuthCaseRepository implements AuthRepository {
     if (!user.isActive) {
       throw new UnauthorizedException('Account is not activated');
     }
-
-    // Generate JWT token
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const access_token = this.jwtService.sign(
-      payload,
-      {
-        expiresIn: '2h',
-        secret: this.configService.get("JWT_SECRET")
-      }
-    );
-
-    // Return token and user without passwordHash
+    const payload = { sub: user.id, email: user.email };
+    const access_token = this.jwtService.sign(payload, {expiresIn : '1m', secret : this.configService.get("JWT_SECRET")})
+    // Retourner l'utilisateur sans le passwordHash et le token
     const { passwordHash: _, ...userWithoutPassword } = user;
     return {
-      access_token,
-      user: userWithoutPassword as User
+      user: userWithoutPassword as User,
+      access_token
     };
   }
 
@@ -114,7 +105,7 @@ export class AuthCaseRepository implements AuthRepository {
     }
 
     // Générer le token JWT
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { sub: user.id, email: user.email };
     const access_token = this.jwtService.sign(
       payload,
       {
