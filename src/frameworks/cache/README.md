@@ -56,3 +56,5 @@ async getData() {
 
 TTL par défaut: **300 secondes (5 minutes)**
 
+
+

@@ -105,3 +105,5 @@ SELECT * FROM pg_extension WHERE extname IN ('pg_trgm', 'postgis');
 2. Ajouter les APIs admin (verification pharmacies)
 3. Implémenter l'audit logging automatique
 
+
+
