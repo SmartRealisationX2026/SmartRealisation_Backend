@@ -21,7 +21,7 @@ export class AuthController implements AuthRepository {
   async login(
     @Body('email') email: string,
     @Body('password') password: string,
-  ): Promise<User | null> {
+  ): Promise<{access_token: string, user: User} | null> {
     return await this.authService.login(email, password);
   }
 

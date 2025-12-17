@@ -20,19 +20,36 @@ export class SearchService {
   ) {}
 
   async searchPharmacies(params: {
-    medicationId: string;
+    medication: string;
     latitude: number;
     longitude: number;
     radiusKm: number;
   }): Promise<PharmacySearchResult[]> {
-    const { medicationId, latitude, longitude, radiusKm } = params;
-    if (!medicationId) {
-      throw new BadRequestException('medicationId is required');
+    const { medication, latitude, longitude, radiusKm } = params;
+    if (!medication || medication.trim().length < 2) {
+      throw new BadRequestException('medication name must be at least 2 characters');
     }
     if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
       throw new BadRequestException('latitude/longitude are required');
     }
     const radius = radiusKm > 0 ? radiusKm : 10;
+
+    // Resolve medication name to UUID
+    const medicationRecord = await this.prisma.medication.findFirst({
+      where: {
+        OR: [
+          { commercialName: { equals: medication, mode: 'insensitive' } },
+          { dciName: { equals: medication, mode: 'insensitive' } }
+        ]
+      },
+      select: { id: true }
+    });
+
+    if (!medicationRecord) {
+      throw new BadRequestException(`Medication "${medication}" not found`);
+    }
+
+    const medicationId = medicationRecord.id;
     const cacheKey = `pharmacy:search:${medicationId}:${latitude}:${longitude}:${radius}`;
     const cached = await this.redis.get<PharmacySearchResult[]>(cacheKey);
     if (cached) return cached;

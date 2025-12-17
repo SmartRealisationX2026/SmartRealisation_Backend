@@ -16,21 +16,30 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async get<T>(key: string): Promise<T | null> {
-    const value = await this.client.get(key);
-    if (!value) return null;
     try {
+      const value = await this.client.get(key);
+      if (!value) return null;
       return JSON.parse(value) as T;
     } catch {
+      // Redis unavailable - return null (no cache)
       return null;
     }
   }
 
   async set<T>(key: string, value: T, ttlSeconds = this.defaultTtlSeconds): Promise<void> {
-    await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+    try {
+      await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+    } catch {
+      // Redis unavailable - silently fail (no cache)
+    }
   }
 
   async del(key: string): Promise<void> {
-    await this.client.del(key);
+    try {
+      await this.client.del(key);
+    } catch {
+      // Redis unavailable - silently fail
+    }
   }
 
   async onModuleDestroy(): Promise<void> {

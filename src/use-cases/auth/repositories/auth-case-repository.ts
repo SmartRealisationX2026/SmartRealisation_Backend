@@ -18,7 +18,7 @@ export class AuthCaseRepository implements AuthRepository {
     private readonly jwtService : JwtService,
   ) {}
 
-  async login(email: string, password: string): Promise<User | null> {
+  async login(email: string, password: string): Promise<{access_token: string, user: User} | null> {
     const user = await this.prismaService.user.findUnique({
       where: { email }
     });
@@ -37,9 +37,22 @@ export class AuthCaseRepository implements AuthRepository {
       throw new UnauthorizedException('Account is not activated');
     }
 
-    // Retourner l'utilisateur sans le passwordHash
+    // Generate JWT token
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const access_token = this.jwtService.sign(
+      payload,
+      {
+        expiresIn: '2h',
+        secret: this.configService.get("JWT_SECRET")
+      }
+    );
+
+    // Return token and user without passwordHash
     const { passwordHash: _, ...userWithoutPassword } = user;
-    return userWithoutPassword as User;
+    return {
+      access_token,
+      user: userWithoutPassword as User
+    };
   }
 
   async register(userDto: CreateUserDto): Promise<void> {

@@ -1,12 +1,13 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsUUID, Max, Min, MinLength } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SearchService } from 'src/use-cases/search/search/search.service';
 
 class PharmacySearchQueryDto {
-  @IsUUID()
-  medicationId: string;
+  @IsString()
+  @MinLength(2)
+  medication: string;
 
   @Type(() => Number)
   @IsNumber()
@@ -31,15 +32,15 @@ export class SearchController {
 
   @Get('search')
   @ApiOperation({ summary: 'Find pharmacies with medication and distance' })
-  @ApiQuery({ name: 'medicationId', required: true, description: 'Medication UUID' })
+  @ApiQuery({ name: 'medication', required: true, description: 'Medication name (minimum 2 characters)' })
   @ApiQuery({ name: 'latitude', required: true, type: Number })
   @ApiQuery({ name: 'longitude', required: true, type: Number })
   @ApiQuery({ name: 'radiusKm', required: false, type: Number, description: 'Search radius in km (1-50)' })
   @ApiResponse({ status: 200, description: 'Pharmacies with stock sorted by distance' })
   async search(@Query() query: PharmacySearchQueryDto) {
-    const { medicationId, latitude, longitude, radiusKm = 10 } = query;
+    const { medication, latitude, longitude, radiusKm = 10 } = query;
     const pharmacies = await this.searchService.searchPharmacies({
-      medicationId,
+      medication,
       latitude,
       longitude,
       radiusKm,

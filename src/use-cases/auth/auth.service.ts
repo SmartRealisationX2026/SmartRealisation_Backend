@@ -7,7 +7,7 @@ import { AuthRepository } from '../../core/repositories';
 export class AuthCaseService implements AuthRepository {
   constructor(private readonly authCaseRepository: AuthRepository) {}
 
-  async login(email: string, password: string): Promise<User | null> {
+  async login(email: string, password: string): Promise<{access_token: string, user: User} | null> {
     return await this.authCaseRepository.login(email, password);
   }
   async register(user: CreateUserDto): Promise<void> {
