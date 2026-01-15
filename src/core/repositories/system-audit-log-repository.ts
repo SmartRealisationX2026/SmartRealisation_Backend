@@ -3,7 +3,7 @@ import {
   UpdateSystemAuditLogDto,
 } from '../dtos';
 import { SystemAuditLog } from '../entities';
-import { ActionType } from '@prisma/client';
+import { ActionType } from 'src/generated/prisma';
 
 export abstract class SystemAuditLogRepository {
   abstract findOne(id: string): Promise<SystemAuditLog | null>;

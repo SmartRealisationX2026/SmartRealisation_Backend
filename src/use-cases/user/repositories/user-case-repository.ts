@@ -5,7 +5,7 @@ import { User } from 'src/core/entities';
 import { PrismaService } from '../../../frameworks/data-services/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { UserRole } from '@prisma/client';
+import { UserRole } from 'src/generated/prisma';
 
 @Injectable()
 export class UserCaseRepository implements UserRepository {

@@ -11,7 +11,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { StockAlertService } from '../../../use-cases/stock-alert/stock-alert/stock-alert.service';
 import { CreateStockAlertDto, UpdateStockAlertDto } from '../../../core/dtos/request/stock-alert.dto';
-import { NotificationChannel, AlertStatus } from '@prisma/client';
+import { NotificationChannel, AlertStatus } from 'src/generated/prisma';
 
 @ApiTags('Stock Alerts')
 @Controller('stock-alerts')
