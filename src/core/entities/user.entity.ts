@@ -3,7 +3,7 @@ import { Search } from './search.entity';
 import { StockAlert } from './stock-alert.entity';
 import { SystemAuditLog } from './system-audit-log.entity';
 import { PriceHistory } from './price-history.entity';
-import { Language, UserRole } from '@prisma/client';
+import { Language, UserRole } from 'src/generated/prisma';
 
 export class User {
   id: string;

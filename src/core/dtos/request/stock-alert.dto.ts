@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { PartialType, IntersectionType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
-import { AlertStatus, NotificationChannel } from '@prisma/client';
+import { AlertStatus, NotificationChannel } from 'src/generated/prisma';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateStockAlertDto {

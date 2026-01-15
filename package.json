@@ -23,12 +23,19 @@
     "db:migrate:raw": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:clean": "ts-node prisma/clean-db.ts",
-    "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset --force"
+    "seed": "npm run build && node dist/prisma/seed.js",
+    "seed:dev": "ts-node --project tsconfig.seed.json prisma/seed.ts",
+    "seed:reset": "prisma db push --force-reset && npm run seed",
+    "db:seed": "npm run build && xcopy /E /I /Y src\\generated dist\\src\\generated >nul 2>&1 && node dist/prisma/seed.js",
+    "db:reset": "prisma db push --force-reset && npm run db:seed",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "prisma:seed": "npx prisma db seed"
+
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

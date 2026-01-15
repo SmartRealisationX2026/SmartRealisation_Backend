@@ -12,7 +12,7 @@ import {
 } from 'class-validator';
 import { PartialType, IntersectionType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
-import { Language, UserRole } from '@prisma/client';
+import { Language, UserRole } from 'src/generated/prisma';
 
 
 
