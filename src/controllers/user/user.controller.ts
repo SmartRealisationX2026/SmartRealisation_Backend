@@ -21,7 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../frameworks/auth-services/JwtAuthGuard';
 import { UserFactoryService } from '../../use-cases/user/user.service';
-import { UserRole } from '@prisma/client';
+import { UserRole } from 'src/generated/prisma';
 
 @ApiTags('Users')
 @ApiBearerAuth()

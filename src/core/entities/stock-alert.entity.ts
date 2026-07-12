@@ -1,7 +1,7 @@
 import { User } from './user.entity';
 import { Medication } from './medication.entity';
 import { Pharmacy } from './pharmacy.entity';
-import { AlertStatus, NotificationChannel } from '@prisma/client';
+import { AlertStatus, NotificationChannel } from 'src/generated/prisma';
 
 export class StockAlert {
   id: string;

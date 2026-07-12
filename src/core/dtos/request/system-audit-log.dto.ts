@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { PartialType, IntersectionType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
-import { ActionType } from '@prisma/client';
+import { ActionType } from 'src/generated/prisma';
 
 export class CreateSystemAuditLogDto {
   @IsUUID()

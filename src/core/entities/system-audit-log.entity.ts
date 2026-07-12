@@ -1,5 +1,5 @@
 import { User } from './user.entity';
-import { ActionType } from '@prisma/client';
+import { ActionType } from 'src/generated/prisma';
 
 export class SystemAuditLog {
   id: string;

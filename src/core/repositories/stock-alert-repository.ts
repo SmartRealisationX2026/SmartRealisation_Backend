@@ -1,6 +1,6 @@
 import { CreateStockAlertDto, UpdateStockAlertDto } from '../dtos';
 import { StockAlert } from '../entities';
-import { AlertStatus } from '@prisma/client';
+import { AlertStatus } from 'src/generated/prisma';
 
 export abstract class StockAlertRepository {
   abstract findOne(id: string): Promise<StockAlert | null>;

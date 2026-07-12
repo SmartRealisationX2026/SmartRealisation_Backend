@@ -1,6 +1,6 @@
 import { CreateUserDto, UpdateUserDto } from '../dtos';
 import { User } from '../entities';
-import { UserRole } from '@prisma/client';
+import { UserRole } from 'src/generated/prisma';
 
 export abstract class UserRepository {
   abstract findOne(id: string): Promise<User | null>;
